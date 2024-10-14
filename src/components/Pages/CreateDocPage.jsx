@@ -8,7 +8,10 @@ export default function CreateDocPage() {
     return [{ key: initialKey, index: 0, value: "" }];
   });
   const [currentFocusLine, setCurrentFocusLine] = useState({ key: initialKey, index: 0 });
+  // const beforeLineRef = useRef({ isTriggered: false, beforeLineStringLength: 0 });
   const lineCollectionRef = useRef(null);
+  const isBackspaceTriggerRef = useRef(false);
+  const lineStringLengthRef = useRef(0);
 
   const handleInputKeyDown = (e) => {
     if (e.key === "Enter") {
@@ -19,6 +22,7 @@ export default function CreateDocPage() {
 
       const clonedNewLineCollection = structuredClone(lineCollection);
       clonedNewLineCollection.splice(currentFocusLine.index + 1, 0, { key: newKey, index: currentFocusLine.index + 1, value: "" });
+
       const newLineCollection = clonedNewLineCollection.map((value, index) => {
         if (index > currentFocusLine.index + 1) {
           return { ...value, index: value.index + 1 };
@@ -30,20 +34,36 @@ export default function CreateDocPage() {
       setLineCollection(newLineCollection);
     }
 
-    if (e.code === "Backspace" && e.target.value === "" && lineCollection.length > 1) {
+    const isFirst = lineCollection.every((value) => value.index >= currentFocusLine.index);
+    const cursorPosition = e.target.selectionStart;
+
+    if (e.code === "Backspace" && lineCollection.length > 1 && !isFirst && cursorPosition === 0) {
       e.preventDefault();
 
       let beforeLineIndex;
+      let currentLineString;
 
       setLineCollection((prev) => prev.filter((value, index) => {
         if (value.key === currentFocusLine.key) {
-          beforeLineIndex = index - 1;
+          beforeLineIndex = lineCollection[index - 1].index;
+          currentLineString = lineCollection[index].value;
+          lineStringLengthRef.current = lineCollection[index - 1].value.length;
         }
 
         return value.key !== currentFocusLine.key;
       }));
 
-      setCurrentFocusLine((prev) => ({ ...prev, key: lineCollection[beforeLineIndex]["key"], index: prev.index - 1 }));
+      setLineCollection((prev) => prev.map((value) => {
+        if (value.index === beforeLineIndex) {
+          return { ...value, value: value.value + currentLineString };
+        }
+
+        return value;
+      }))
+
+      setCurrentFocusLine((prev) => ({ ...prev, key: lineCollection[beforeLineIndex]["key"], index: beforeLineIndex }));
+
+      isBackspaceTriggerRef.current = true;
     }
   }
 
@@ -85,7 +105,14 @@ export default function CreateDocPage() {
     const map = getMap(lineCollectionRef);
     const node = map.get(currentFocusLine.key);
 
-    node.focus();
+    if (isBackspaceTriggerRef.current) {
+      node.focus();
+      node.setSelectionRange(lineStringLengthRef.current, lineStringLengthRef.current);
+    } else {
+      node.focus();
+    }
+
+    isBackspaceTriggerRef.current = false;
   }, [currentFocusLine])
 
   return (
@@ -95,7 +122,7 @@ export default function CreateDocPage() {
           const { key, value } = lineValue;
 
           return (
-            <input key={key} ref={(node) => {
+            <textarea key={key} ref={(node) => {
               const map = getMap(lineCollectionRef);
 
               if (node) {
