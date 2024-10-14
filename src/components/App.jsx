@@ -1,7 +1,15 @@
+import { Route, Routes } from "react-router-dom";
+import Header from "./Header";
+import Layout from "./UI/Layout";
+import LandingPage from "./Pages/LandingPage";
+
 export default function App() {
   return (
-    <main className="w-full h-screen flex flex-col gap-40">
-      Hello, world!
-    </main>
+    <Layout>
+      <Header />
+      <Routes>
+        <Route path="/" exact element={<LandingPage />} />
+      </Routes>
+    </Layout>
   )
 }

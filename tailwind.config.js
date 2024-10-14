@@ -100,7 +100,17 @@ export default {
       md: { max: '1200px' },
       // => @media (max-width: 768px) { ... }
     },
-    extend: {},
+    extend: {
+      keyframes: {
+        fadeIn: {
+          "0%": { opacity: 0 },
+          "100%": { opacity: 1 },
+        },
+      },
+      animation: {
+        fadeIn: 'fadeIn 2.5s linear',
+      },
+    },
   },
   plugins: [],
 };
