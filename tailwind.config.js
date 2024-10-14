@@ -106,9 +106,24 @@ export default {
           "0%": { opacity: 0 },
           "100%": { opacity: 1 },
         },
+        bounce: {
+          "0%": {
+            transform: "translateY(-12%)",
+            "animation-timing-function": "cubic-bezier(0.8, 0, 1, 1)",
+          },
+          "50%": {
+            transform: "translateY(0)",
+            "animation-timing-function": "cubic-bezier(0, 0, 0.2, 1)",
+          },
+          "100%": {
+            transform: "translateY(-12%)",
+            "animation-timing-function": "cubic-bezier(0.8, 0, 1, 1)",
+          },
+        }
       },
       animation: {
-        fadeIn: 'fadeIn 2.5s linear',
+        fadeIn: "fadeIn 2.5s linear",
+        bounce: "bounce 1.2s linear infinite"
       },
     },
   },
