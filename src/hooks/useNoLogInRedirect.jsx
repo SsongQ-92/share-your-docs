@@ -1,10 +1,10 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import checkLogIn from "../utils/checkLogIn";
+import { useBoundStore } from "../store";
 
 const useNoLogInRedirect = () => {
   const navigate = useNavigate();
-  const isLogIn = checkLogIn();
+  const isLogIn = useBoundStore((state) => state.isLogIn);
 
   useEffect(() => {
     if (!isLogIn) {

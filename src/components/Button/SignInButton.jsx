@@ -1,23 +1,23 @@
 import { useBoundStore } from "../../store";
 
 export default function SignInButton() {
-  const { isLogin, logIn, logOut } = useBoundStore((state) => ({
-    isLogin: state.isLogin,
-    logIn: state.logIn,
-    logOut: state.logOut,
+  const { isLogIn, asyncLogIn, asyncLogOut } = useBoundStore((state) => ({
+    isLogIn: state.isLogIn,
+    asyncLogIn: state.asyncLogIn,
+    asyncLogOut: state.asyncLogOut,
   }));
 
   const handleButtonClick = async () => {
-    if (isLogin) {
-      await logOut();
+    if (isLogIn) {
+      await asyncLogOut();
     } else {
-      await logIn();
+      await asyncLogIn();
     }
   }
 
   return (
     <button className="flex-center w-80 h-50 border-2 border-solid border-white bg-gray-8 rounded-[15px] text-white text-18 hover:bg-black-light" onClick={handleButtonClick}>
-      {isLogin ? "로그아웃" : "로그인"}
+      {isLogIn ? "로그아웃" : "로그인"}
     </button>
   )
 }

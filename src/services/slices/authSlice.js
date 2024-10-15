@@ -1,81 +1,81 @@
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
+import { child, get, ref, remove, update } from "firebase/database";
 import { auth, db } from "../../firebase";
-import { child, get, ref, update } from "firebase/database";
 
 export const createAuthSlice = (set, getState) => ({
-  isLogin: false,
+  isLogIn: false,
   userId: "",
   userName: "",
-  logIn: async () => {
+  onlineUserList: [],
+  asyncLogIn: async () => {
     try {
       const provider = new GoogleAuthProvider();
       const response = await signInWithPopup(auth, provider);
       const { uid, displayName } = response.user;
 
-      set((state) => ({ ...state, userId: uid, userName: displayName, isLogin: true }));
+      set((state) => ({ ...state, userId: uid, userName: displayName, isLogIn: true }));
 
-      const isEnrolled = getState().checkEnrollUser(uid);
-      if (!isEnrolled) {
-        getState().enrollUser(uid, displayName);
-      }
-      getState().updateOnlineUser(uid, true);
+      getState().asyncCheckEnrollUser(uid, displayName);
+      getState().asyncUpdateOnlineUser(uid, true);
     } catch ({ name, message }) {
+      console.error(name, message);
       set((state) => ({ ...state, errorMessage: message , errorName: name }));
     }
   },
-  logOut: async () => {
+  asyncLogOut: async () => {
     try {
       const auth = getAuth();
       const userId = getState().userId;
-      set((state) => ({ ...state, isLogin: false }));
-      getState().updateOnlineUser(userId, false);
+      set((state) => ({ ...state, isLogIn: false }));
+      getState().asyncUpdateOnlineUser(userId, false);
       signOut(auth);
     } catch ({ name, message }) {
       set((state) => ({ ...state, errorMessage: message , errorName: name }));
     }
   },
-  enrollUser: async (uid, userName) => {
+  asyncEnrollUser: async (uid, userName) => {
     try {
-      const dbRef = ref(db, "user");
-      const response = await get(child(dbRef, "/userList"));
-      
-      const updatedUserList = response + "," + uid;
-
-      update(ref(db, "/user/userList"), updatedUserList);
-      update(ref(db, `user/${uid}`), {
-        userName
-      });
+      const userInfo = { userId: uid, userName, };
+      update(ref(db, `/user/userList/${uid}`), userInfo);
     } catch ({ name, message }) {
       set((state) => ({ ...state, errorMessage: message , errorName: name }));
     }
   },
-  checkEnrollUser: async (uid) => {
+  asyncCheckEnrollUser: async (uid, displayName) => {
     try {
       const dbRef = ref(db, "user");
       const response = await get(child(dbRef, "/userList"));
+      const parsedResponse = response.val();
 
-      return response.includes(uid);
+      if (!parsedResponse || (parsedResponse && !Object.keys(parsedResponse).includes(uid))) {
+        getState().asyncEnrollUser(uid, displayName);
+      }
     } catch ({ name, message }) {
       set((state) => ({ ...state, errorMessage: message , errorName: name }));
     }
   },
-  updateOnlineUser: async (uid, isLogin) => {
+  asyncGetOnlineUser: async () => {
     try {
       const dbRef = ref(db, "user");
-      
+      const response = await get(child(dbRef, "/currentOnlineUser"));
+      const parsedResponse = response?.val();
+
+      if (!parsedResponse) {
+        set({ onlineUserList: [] });
+        return;
+      }
+
+      set({ onlineUserList: Object.keys(parsedResponse) });
+    } catch ({ name, message }) {
+      set((state) => ({ ...state, errorMessage: message , errorName: name }));
+    }
+  },
+  asyncUpdateOnlineUser: async (uid, isLogin) => {
+    try {      
       if (isLogin) {
-        const response = await get(child(dbRef, "/currentOnlineUser"));
-        
-        const updatedOnlineUserList = response + "," + uid;
-        
-        update(ref(db, "/user/currentOnlineUser"), updatedOnlineUserList);
-      } else {
-        const response = await get(child(dbRef, "/currentOnlineUser"));
-        const onlineUserListArray = response.split(",");
-        
-        const updatedOnlineUserList = onlineUserListArray.filter(value => value !== uid).join("");
-        
-        update(ref(db, "/user/currentOnlineUser"), updatedOnlineUserList);
+        update(ref(db, `/user/currentOnlineUser/${uid}`), { uid });
+      } else { 
+        remove(ref(db, `/user/currentOnlineUser/${uid}`));
       }
     } catch ({ name, message }) {
       set((state) => ({ ...state, errorMessage: message , errorName: name }));

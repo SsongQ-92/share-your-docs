@@ -3,12 +3,12 @@ import LinkButton from "../Button/LinkButton";
 import Container from "../UI/Container";
 
 export default function LandingPage() {
-  const { isLogin, userName } = useBoundStore((state) => ({
-    isLogin: state.isLogin,
+  const { isLogIn, userName } = useBoundStore((state) => ({
+    isLogIn: state.isLogIn,
     userName: state.userName,
   }));
 
-  if (!isLogin) {
+  if (!isLogIn) {
     return (
       <main className="h-full flex-col-center gap-20 bg-black-dark">
         <p className="text-80 text-gray-0 animate-fadeIn">환영합니다</p>
@@ -21,7 +21,7 @@ export default function LandingPage() {
     <main className="h-full flex-col-center gap-20 bg-black-dark">
       <p className="text-80 text-gray-0 animate-fadeIn">{`${userName}님 환영합니다`}</p>
       {
-        isLogin && 
+        isLogIn && 
           (<Container style="flex-center gap-30" >
             <LinkButton destination="/docs/list">내 문서 보러 가기</ LinkButton>
             <LinkButton destination="/docs/new">
