@@ -1,6 +1,6 @@
 export const createErrorSlice = (set) => ({
   errorMessage: "",
-  errorName: ",",
+  errorName: "",
   setErrorMessage: (newErrorMessage) => set({ errorMessage: newErrorMessage }),
   setErrorName: (newErrorName) => set({ errorName: newErrorName }),
 });

@@ -4,4 +4,4 @@ export default function SignInButton() {
   )
 }
 
-SignInButton.prototype = {};
+SignInButton.propTypes = {};

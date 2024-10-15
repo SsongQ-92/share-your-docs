@@ -128,8 +128,8 @@ export default function CreateDocPage() {
   }, [currentFocusLine])
 
   return (
-    <main className="flex p-50 pt-130 bg-black-dark">
-      <div className="w-[90%] p-10 flex flex-col gap-8">
+    <main className="flex justify-between items-start gap-20 px-70 pb-50 pt-130 bg-black-dark">
+      <div className="w-[88%] flex flex-col gap-15">
         <input type="text" placeholder="제목" value={title} onChange={handleInputChange} className="border-1 border-solid border-white rounded-[10px] px-15 py-5 text-black text-30 caret-black bg-gray-1" />
         {lineCollection.map(lineValue => {
           const { key, value, height } = lineValue;
