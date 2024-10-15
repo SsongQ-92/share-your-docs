@@ -1,18 +1,24 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import getMap from "../../utils/getMap";
+import SaveButton from "../Button/SaveButton";
 
 export default function CreateDocPage() {
   const initialKey = uuidv4();
+  const [title, setTitle] = useState("");
   const [lineCollection, setLineCollection] = useState(() => {
-    return [{ key: initialKey, index: 0, value: "" }];
+    return [{ key: initialKey, index: 0, value: "", height: 39 }];
   });
   const [currentFocusLine, setCurrentFocusLine] = useState({ key: initialKey, index: 0 });
   const lineCollectionRef = useRef(null);
   const isBackspaceTriggerRef = useRef(false);
   const lineStringLengthRef = useRef(0);
 
-  const handleInputKeyDown = (e) => {
+  const handleInputChange = (e) => {
+    setTitle(e.target.value);
+  }
+
+  const handleTextareaKeyDown = (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
 
@@ -20,7 +26,7 @@ export default function CreateDocPage() {
       setCurrentFocusLine((prev) => ({ ...prev, key: newKey, index: prev.index + 1 }));
 
       const clonedNewLineCollection = structuredClone(lineCollection);
-      clonedNewLineCollection.splice(currentFocusLine.index + 1, 0, { key: newKey, index: currentFocusLine.index + 1, value: "" });
+      clonedNewLineCollection.splice(currentFocusLine.index + 1, 0, { key: newKey, index: currentFocusLine.index + 1, value: "", height: 39 });
 
       const newLineCollection = clonedNewLineCollection.map((value, index) => {
         if (index > currentFocusLine.index + 1) {
@@ -70,11 +76,11 @@ export default function CreateDocPage() {
     }
   }
 
-  const handleInputChange = (e) => {
+  const handleTextareaChange = (e) => {
     setLineCollection((prev) => {
       return prev.map((value) => {
         if (value.key === currentFocusLine.key) {
-          return { ...value, value: e.target.value };
+          return { ...value, value: e.target.value, height: e.target.scrollHeight };
         }
 
         return value;
@@ -82,14 +88,17 @@ export default function CreateDocPage() {
     })
   }
 
-  const handleInputFocus = (e) => {
+  const handleTextareaFocus = (e) => {
     const map = getMap(lineCollectionRef);
     let currentKey;
     let currentIndex;
     
     for (const key of map) {
-      if (key[1] === e.target) {
-        currentKey = key[0];
+      const element = key[1];
+      const elementKey = key[0];
+
+      if (element === e.target) {
+        currentKey = elementKey;
         break;
       }
     }
@@ -119,10 +128,12 @@ export default function CreateDocPage() {
   }, [currentFocusLine])
 
   return (
-    <main className="flex justify-center p-50 pt-150 items-start bg-black-dark">
-      <div className="w-1000 min-h-600 p-20 flex flex-col gap-20 border-2 border-solid border-white rounded-[15px]">
+    <main className="flex p-50 pt-130 bg-black-dark">
+      <div className="w-[90%] p-10 flex flex-col gap-8">
+        <input type="text" placeholder="제목" value={title} onChange={handleInputChange} className="border-1 border-solid border-white rounded-[10px] px-15 py-5 text-black text-30 caret-black bg-gray-1" />
         {lineCollection.map(lineValue => {
-          const { key, value } = lineValue;
+          const { key, value, height } = lineValue;
+          const calculatedRows = Math.floor(height / 39);
 
           return (
             <textarea key={key} ref={(node) => {
@@ -133,10 +144,11 @@ export default function CreateDocPage() {
               } else {
                 map.delete(key);
               }
-            }} value={value} onKeyDown={handleInputKeyDown} onChange={handleInputChange} onFocus={handleInputFocus} rows={1} className="w-full h-full border-1 border-solid border-white rounded-[10px] px-15 text-white text-26 caret-white resize-none bg-black-dark overflow-hidden" />
+            }} value={value} onKeyDown={handleTextareaKeyDown} onChange={handleTextareaChange} onFocus={handleTextareaFocus} rows={calculatedRows} className={`w-full rounded-[10px] px-15 text-white text-26 caret-white resize-none overflow-y-hidden bg-black-dark ${key === currentFocusLine.key && "border-1 border-solid border-white"}`} />
           )
         })}
       </div>
+      <SaveButton />
     </main>
   )
 }
