@@ -15,8 +15,11 @@ export const createAuthSlice = (set) => ({
 
       set({ userLocalId: localId });
       set({ userName: fullName });
-    } catch (err) {
-      console.error(err.message);
+    } catch ({ name, message }) {
+      set((state) => {
+        state.setErrorMessage(name);
+        state.setErrorName(message);
+      })
     }
   }
 });
