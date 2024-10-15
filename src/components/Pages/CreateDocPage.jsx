@@ -8,7 +8,6 @@ export default function CreateDocPage() {
     return [{ key: initialKey, index: 0, value: "" }];
   });
   const [currentFocusLine, setCurrentFocusLine] = useState({ key: initialKey, index: 0 });
-  // const beforeLineRef = useRef({ isTriggered: false, beforeLineStringLength: 0 });
   const lineCollectionRef = useRef(null);
   const isBackspaceTriggerRef = useRef(false);
   const lineStringLengthRef = useRef(0);
@@ -56,6 +55,10 @@ export default function CreateDocPage() {
       setLineCollection((prev) => prev.map((value) => {
         if (value.index === beforeLineIndex) {
           return { ...value, value: value.value + currentLineString };
+        }
+
+        if (value.index > currentFocusLine.index) {
+          return { ...value, index: value.index - 1 };
         }
 
         return value;
