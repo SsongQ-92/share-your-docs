@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
+import useNoLogInRedirect from "../../hooks/useNoLogInRedirect";
 import getMap from "../../utils/getMap";
 import SaveButton from "../Button/SaveButton";
 
@@ -112,6 +113,8 @@ export default function CreateDocPage() {
 
     setCurrentFocusLine((prev) => ({ ...prev, key: currentKey, index: currentIndex }));
   }
+
+  useNoLogInRedirect();
 
   useEffect(() => {
     const map = getMap(lineCollectionRef);

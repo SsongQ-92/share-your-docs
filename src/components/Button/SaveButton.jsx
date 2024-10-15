@@ -2,9 +2,8 @@ import { v4 as uuidv4 } from "uuid";
 import { useBoundStore } from "../../store";
 
 export default function SaveButton() {
-  const { userLocalId, userFederatedId, userName, uniqueDocId, setUniqueDocId, setErrorMessage } = useBoundStore((state) => ({
-    userLocalId: state.userLocalId,
-    userFederatedId: state.userFederatedId,
+  const { userId, userName, uniqueDocId, setUniqueDocId, setErrorMessage } = useBoundStore((state) => ({
+    userId: state.userId,
     userName: state.userName,
     uniqueDocId: state.uniqueDocId,
     setUniqueDocId: state.setUniqueDocId,
@@ -13,7 +12,7 @@ export default function SaveButton() {
 
   const handleButtonClick = () => {
     const randomlyCreatedId = uuidv4(); 
-    const newDocId = userName[0] + userLocalId.slice(2, 5) + userFederatedId.slice(2, 5) + randomlyCreatedId;
+    const newDocId = userName[0] + userId.slice(2, 5) + randomlyCreatedId;
 
     setUniqueDocId(newDocId);
   }
@@ -38,7 +37,7 @@ export default function SaveButton() {
             위의 링크를 클릭하여 복사하세요
           </p>
         </div>
-      } 
+      }
     </div>
   )
 }
