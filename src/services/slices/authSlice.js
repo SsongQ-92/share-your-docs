@@ -18,10 +18,9 @@ export const createAuthSlice = (set, getState) => ({
 
       set((state) => ({ ...state, userId: uid, userName: displayName, isLogIn: true }));
 
-      getState().asyncCheckEnrollUser(uid, displayName);
-      getState().asyncUpdateOnlineUser(uid, true);
+      await getState().asyncCheckEnrollUser(uid, displayName);
+      await getState().asyncUpdateOnlineUser(uid, true);
     } catch ({ name, message }) {
-      console.error(name, message);
       set((state) => ({ ...state, errorMessage: message , errorName: name }));
     }
   },
@@ -29,8 +28,10 @@ export const createAuthSlice = (set, getState) => ({
     try {
       const auth = getAuth();
       const userId = getState().userId;
-      set((state) => ({ ...state, isLogIn: false, uniqueDocId: "", docMode: "", currentDocData: [], userId: "", userName: "", userDocsNumber: 0, userAllDocs: {} }));
-      getState().asyncUpdateOnlineUser(userId, false);
+      const currentWorkingUniqueDocId = getState().uniqueDocId;
+      await getState().asyncUpdateOnlineUser(userId, false);
+      await getState().asyncDeleteConcurrentUserList(currentWorkingUniqueDocId);
+      set((state) => ({ ...state, isLogIn: false, uniqueDocId: "", docMode: "", currentDocData: [], userId: "", userName: "", userDocsNumber: 0, userAllDocs: {}, autoSaveNum: 0 }));
       signOut(auth);
     } catch ({ name, message }) {
       set((state) => ({ ...state, errorMessage: message , errorName: name }));
@@ -51,9 +52,9 @@ export const createAuthSlice = (set, getState) => ({
       const parsedResponse = response.val();
 
       if (!parsedResponse || (parsedResponse && !Object.keys(parsedResponse).includes(uid))) {
-        getState().asyncEnrollUser(uid, displayName);
+        await getState().asyncEnrollUser(uid, displayName);
       } else {
-        getState().asyncGetUserDocList(uid);
+        await getState().asyncGetUserDocList(uid);
       }
     } catch ({ name, message }) {
       set((state) => ({ ...state, errorMessage: message , errorName: name }));

@@ -12,7 +12,7 @@ export default function DocsListPage() {
   }))
 
   const userDocsValues = Object.values(userAllDocs);
-  const sortedUserDocsValues = userDocsValues.sort((a, b) => b.parsedDate -  a.parsedDate);
+  const sortedUserDocsValues = userDocsValues.sort((a, b) => b.createdAt -  a.createdAt);
 
   useNoLogInRedirect();
 

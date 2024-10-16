@@ -4,15 +4,15 @@ import Container from "../UI/Container";
 import { useBoundStore } from "../../store";
 
 export default function Header() {
-  const { userName, isLogIn, clearDocInfo, userDocsNumber } = useBoundStore((state) => ({
+  const { userName, isLogIn, userDocsNumber, asyncClearDocInfo } = useBoundStore((state) => ({
     userName: state.userName,
     isLogIn: state.isLogIn,
-    clearDocInfo: state.clearDocInfo,
     userDocsNumber: state.userDocsNumber,
+    asyncClearDocInfo: state.asyncClearDocInfo,
   }))
 
   const handleLogoClick = () => {
-    clearDocInfo();
+    asyncClearDocInfo();
   }
 
   return (
