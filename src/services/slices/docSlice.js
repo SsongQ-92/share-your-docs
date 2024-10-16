@@ -4,15 +4,18 @@ import { db } from "../../firebase";
 export const createDocSlice = (set, getState) => ({
   uniqueDocId: "",
   docMode: "",
-  isURLCopied: false,
   currentDocData: [],
   setUniqueDocId: (uniqueId) => set((state) => ({ ...state, uniqueDocId: uniqueId })),
+  clearDocInfo: () => set((state) => ({ ...state, uniqueDocId: "", docMode: "", currentDocData: [] })),
   asyncGetUserDocList: async (uid) => {
     try {
       const dbRef = ref(db, "user/userList");
       const response = await get(child(dbRef, `/${uid}/docs`));
       const parsedResponse = response.val();
-      
+
+      const userDocsNumber = Object.keys(parsedResponse).length;
+
+      set((state) => ({ ...state, userAllDocs: parsedResponse, userDocsNumber }));
     } catch ({ name, message }) {
       set((state) => ({ ...state, errorMessage: message , errorName: name }));
     }

@@ -1,16 +1,22 @@
 import PropTypes from "prop-types";
-import { v4 as uuidv4 } from "uuid";
-import { useBoundStore } from "../../store";
 import { memo, useState } from "react";
+import { v4 as uuidv4 } from "uuid";
+import { NO_TITLE_VALUE_ERROR } from "../../constants/errorMessage";
+import { useBoundStore } from "../../store";
 
-const SaveButton = memo(function SaveButton({ title, lineCollection }) {
+const SaveButton = memo(function SaveButton({ mode, title, lineCollection }) {
   const [isTitleError, setIsTitleError] = useState(false);
-  const { userId, userName, uniqueDocId, setUniqueDocId, setErrorMessage, asyncSaveDoc } = useBoundStore((state) => ({
+  const [saveInfo, setSaveInfo] = useState({
+    isSaveClickedOnce: false,
+    autoSaveNum: 0,
+  });
+  const { userId, userName, uniqueDocId, setUniqueDocId, setErrorMessage, addUserDocsNumber, asyncSaveDoc } = useBoundStore((state) => ({
     userId: state.userId,
     userName: state.userName,
     uniqueDocId: state.uniqueDocId,
     setUniqueDocId: state.setUniqueDocId,
     setErrorMessage: state.setErrorMessage,
+    addUserDocsNumber: state.addUserDocsNumber,
     asyncSaveDoc: state.asyncSaveDoc,
   }));
 
@@ -20,17 +26,27 @@ const SaveButton = memo(function SaveButton({ title, lineCollection }) {
     
     if (isTitleNull) return;
 
-    const randomlyCreatedId = uuidv4(); 
-    const newDocId = userName[0] + userId.slice(2, 5) + randomlyCreatedId;
-
-    setUniqueDocId(newDocId);
-
-    const docData = {
-      title,
-      contents: lineCollection,
-    };
-
-    asyncSaveDoc(newDocId, docData);
+    if (mode === "create" && saveInfo.isSaveClickedOnce === false) {
+      const date = new Date();
+      const parsedDate = Date.parse(date);
+      const randomlyCreatedId = uuidv4(); 
+      const newDocId = userName[0] + userId.slice(2, 5) + randomlyCreatedId;
+  
+      setUniqueDocId(newDocId);
+  
+      const docData = {
+        id: newDocId,
+        title,
+        contents: lineCollection,
+        author: userName,
+        authorId: userId,
+        parsedDate, 
+      };
+  
+      asyncSaveDoc(newDocId, docData);
+      addUserDocsNumber();
+      setSaveInfo(prev => ({ ...prev, isSaveClickedOnce: true }));
+    }
   }
 
   const handleURLCopyClipBoard = async () => {
@@ -47,9 +63,9 @@ const SaveButton = memo(function SaveButton({ title, lineCollection }) {
       {uniqueDocId && 
         <div className="flex flex-col gap-20">
           <p className="w-200 p-10 bg-gray-6 text-white text-20 break-words underline cursor-pointer hover:bg-black-light" onClick={handleURLCopyClipBoard}>
-            {uniqueDocId}
+            http://localhost:5173/docs/{uniqueDocId}
           </p>
-          <p className="flex flex-col w-200 p-10 bg-gray-6 text-purple-light text-20 break-words hover:bg-black-light">
+          <p className="flex flex-col w-200 p-10 bg-gray-6 text-purple-light text-20 break-words">
             <span>저장이 완료 되었습니다.</span>
             <span>위의 링크를 클릭하여 복사하세요</span>
           </p>
@@ -57,7 +73,15 @@ const SaveButton = memo(function SaveButton({ title, lineCollection }) {
       }
       {isTitleError &&
         <p className="w-200 p-10 bg-gray-6 text-red text-22 break-words hover:bg-black-light">
-          제목을 입력해주세요
+          {NO_TITLE_VALUE_ERROR}
+        </p>
+      }
+      {(saveInfo.autoSaveNum > 0) &&
+        <p className="flex flex-col w-200 p-10 bg-gray-6 text-purple-light text-20 break-words">
+          <span>자동 저장이 완료 되었습니다.</span>
+          <div className="flex justify-end">
+            <span className="bg-orange rounded-full text-orange-light">{saveInfo.autoSaveNum}</span>
+          </div>
         </p>
       }
     </div>
@@ -67,6 +91,7 @@ const SaveButton = memo(function SaveButton({ title, lineCollection }) {
 export default SaveButton;
 
 SaveButton.propTypes = {
+  mode: PropTypes.string.isRequired,
   title: PropTypes.string,
   lineCollection: PropTypes.arrayOf(
     PropTypes.shape({

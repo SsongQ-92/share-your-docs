@@ -23,7 +23,7 @@ export default function LandingPage() {
       {
         isLogIn && 
           (<Container style="flex-center gap-30" >
-            <LinkButton destination="/docs/list">내 문서 보러 가기</ LinkButton>
+            <LinkButton destination="/docs/lists">내 문서 보러 가기</ LinkButton>
             <LinkButton destination="/docs/new">
               <span className="animate-bounce">새로운 문서 만들기 👉</span>
             </ LinkButton>

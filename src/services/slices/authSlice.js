@@ -7,8 +7,9 @@ export const createAuthSlice = (set, getState) => ({
   userId: "",
   userName: "",
   userDocsNumber: 0,
-  userAllDocs: [],
+  userAllDocs: {},
   onlineUserList: [],
+  addUserDocsNumber: () => set((state) => ({ userDocsNumber: state.userDocsNumber + 1 })),
   asyncLogIn: async () => {
     try {
       const provider = new GoogleAuthProvider();
@@ -28,7 +29,7 @@ export const createAuthSlice = (set, getState) => ({
     try {
       const auth = getAuth();
       const userId = getState().userId;
-      set((state) => ({ ...state, isLogIn: false }));
+      set((state) => ({ ...state, isLogIn: false, uniqueDocId: "", docMode: "", currentDocData: [], userId: "", userName: "", userDocsNumber: 0, userAllDocs: {} }));
       getState().asyncUpdateOnlineUser(userId, false);
       signOut(auth);
     } catch ({ name, message }) {

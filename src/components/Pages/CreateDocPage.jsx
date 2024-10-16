@@ -12,9 +12,12 @@ export default function CreateDocPage() {
     return [{ key: initialKey, index: 0, value: "", height: 39 }];
   });
   const [currentFocusLine, setCurrentFocusLine] = useState({ key: initialKey, index: 0 });
+
   const lineCollectionRef = useRef(null);
   const isBackspaceTriggerRef = useRef(false);
   const lineStringLengthRef = useRef(0);
+  
+  const docMode = "create";
 
   const handleInputChange = (e) => {
     setTitle(e.target.value);
@@ -133,7 +136,7 @@ export default function CreateDocPage() {
 
   return (
     <main className="flex justify-between items-start gap-20 px-70 pb-50 pt-130 bg-black-dark">
-      <Container style="w-[88%] flex flex-col">
+      <Container style="w-[88%] flex flex-col gap-2">
         <input type="text" placeholder="제목" value={title} onChange={handleInputChange} className="border-1 border-solid border-white rounded-[10px] px-15 py-5 text-black text-30 caret-black bg-gray-1 mb-15" />
         {lineCollection.map(lineValue => {
           const { key, value, height } = lineValue;
@@ -152,7 +155,7 @@ export default function CreateDocPage() {
           )
         })}
       </Container>
-      <SaveButton title={title} lineCollection={lineCollection} />
+      <SaveButton mode={docMode} title={title} lineCollection={lineCollection} />
     </main>
   )
 }
