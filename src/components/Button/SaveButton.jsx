@@ -103,7 +103,7 @@ const SaveButton = memo(function SaveButton({ mode, title, lineCollection }) {
       {uniqueDocId && 
         <div className="flex flex-col gap-20">
           <p className="w-200 p-10 bg-gray-6 text-white text-20 break-words underline cursor-pointer hover:bg-black-light" onClick={handleURLCopyClipBoard}>
-            http://localhost:5173/docs/{uniqueDocId}
+            https://share-your-docs.netlify.app/docs/{uniqueDocId}
           </p>
           <p className="flex flex-col w-200 p-10 bg-gray-6 text-purple-light text-20 break-words">
             <span>저장이 완료 되었습니다. 20초 간격으로 자동 저장이 됩니다.</span>
