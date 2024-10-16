@@ -6,6 +6,8 @@ export const createAuthSlice = (set, getState) => ({
   isLogIn: false,
   userId: "",
   userName: "",
+  userDocsNumber: 0,
+  userAllDocs: [],
   onlineUserList: [],
   asyncLogIn: async () => {
     try {
@@ -49,6 +51,8 @@ export const createAuthSlice = (set, getState) => ({
 
       if (!parsedResponse || (parsedResponse && !Object.keys(parsedResponse).includes(uid))) {
         getState().asyncEnrollUser(uid, displayName);
+      } else {
+        getState().asyncGetUserDocList(uid);
       }
     } catch ({ name, message }) {
       set((state) => ({ ...state, errorMessage: message , errorName: name }));
@@ -73,7 +77,7 @@ export const createAuthSlice = (set, getState) => ({
   asyncUpdateOnlineUser: async (uid, isLogin) => {
     try {      
       if (isLogin) {
-        update(ref(db, `/user/currentOnlineUser/${uid}`), { uid });
+        update(ref(db, `/user/currentOnlineUser/${uid}`), { userId: uid });
       } else { 
         remove(ref(db, `/user/currentOnlineUser/${uid}`));
       }

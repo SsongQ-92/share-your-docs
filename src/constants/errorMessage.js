@@ -1,0 +1,1 @@
+export const NO_TITLE_VALUE_ERROR = "제목을 입력해주세요";
