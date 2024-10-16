@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
+import { useBoundStore } from "../../store";
 import SignInButton from "../Button/SignInButton";
 import Container from "../UI/Container";
-import { useBoundStore } from "../../store";
 
 export default function Header() {
   const { userName, isLogIn, userDocsNumber, asyncClearDocInfo } = useBoundStore((state) => ({

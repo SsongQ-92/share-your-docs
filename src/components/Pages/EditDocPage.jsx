@@ -1,18 +1,26 @@
+import PropTypes from "prop-types";
 import { useEffect, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
+import changeDayFormat from "../../utils/changeDayFormat";
+import getDate from "../../utils/getDate";
 import getMap from "../../utils/getMap";
 import SaveButton from "../Button/SaveButton";
+import Container from "../UI/Container";
+import Layout from "../UI/Layout";
 
-export default function EditDocPage() {
-  const initialKey = uuidv4();
-  const [title, setTitle] = useState("");
-  const [lineCollection, setLineCollection] = useState(() => {
-    return [{ key: initialKey, index: 0, value: "", height: 39 }];
-  });
-  const [currentFocusLine, setCurrentFocusLine] = useState({ key: initialKey, index: 0 });
+export default function EditDocPage({ currentDocData }) {
+  const { author, createdAt, modifiedAt, title: initialTitle, contents } = currentDocData;
+  const [title, setTitle] = useState(initialTitle);
+  const [lineCollection, setLineCollection] = useState(contents);
+  const [currentFocusLine, setCurrentFocusLine] = useState({ key: contents[contents.length - 1].key, index: contents[contents.length - 1].index });
+
   const lineCollectionRef = useRef(null);
   const isBackspaceTriggerRef = useRef(false);
-  const lineStringLengthRef = useRef(0);
+  const lineStringLengthRef = useRef(contents[contents.length - 1].value.length);
+  
+  const docMode = "edit";
+  const createdDate = getDate(createdAt);
+  const modifiedDate = getDate(modifiedAt);
 
   const handleInputChange = (e) => {
     setTitle(e.target.value);
@@ -117,38 +125,49 @@ export default function EditDocPage() {
     const map = getMap(lineCollectionRef);
     const node = map.get(currentFocusLine.key);
 
-    if (isBackspaceTriggerRef.current) {
-      node.focus();
-      node.setSelectionRange(lineStringLengthRef.current, lineStringLengthRef.current);
-    } else {
-      node.focus();
-    }
+    node.focus();
+    node.setSelectionRange(lineStringLengthRef.current, lineStringLengthRef.current);
 
     isBackspaceTriggerRef.current = false;
   }, [currentFocusLine])
 
   return (
-    <main className="flex p-50 pt-130 bg-black-dark">
-      <div className="w-[90%] p-10 flex flex-col gap-8">
-        <input type="text" placeholder="제목" value={title} onChange={handleInputChange} className="border-1 border-solid border-white rounded-[10px] px-15 py-5 text-black text-30 caret-black bg-gray-1" />
-        {lineCollection.map(lineValue => {
-          const { key, value, height } = lineValue;
-          const calculatedRows = Math.floor(height / 39);
+    <Layout>
+      <main className="flex flex-col justify-start items-center gap-40 px-70 pb-50 pt-130 bg-black-dark">
+        <section className="flex justify-between items-end w-full">
+          <h1 className="text-violet-light text-30">작성자: {author}</h1>
+          <Container style="flex justify-end items-center gap-20 text-16 text-gray-3">
+            <h2>작성일: {createdDate.currentYear}년 {createdDate.currentMonth}월 {createdDate.currentDate}일 {changeDayFormat(createdDate.currentDay)} {createdDate.currentHour}시 {createdDate.currentMinute}분</h2>
+            <h2>최근수정일: {modifiedDate.currentYear}년 {modifiedDate.currentMonth}월 {modifiedDate.currentDate}일 {changeDayFormat(modifiedDate.currentDay)} {modifiedDate.currentHour}시 {modifiedDate.currentMinute}분</h2>
+          </Container>
+        </section>
+        <Container style="flex justify-between items-start gap-20 w-full">
+          <Container style="w-[88%] flex flex-col gap-2">
+            <input type="text" placeholder="제목" value={title} onChange={handleInputChange} className="border-1 border-solid border-white rounded-[10px] px-15 py-5 text-black text-30 caret-black bg-gray-1 mb-15" />
+            {lineCollection.map(lineValue => {
+              const { key, value, height } = lineValue;
+              const calculatedRows = Math.floor(height / 39);
 
-          return (
-            <textarea key={key} ref={(node) => {
-              const map = getMap(lineCollectionRef);
+              return (
+                <textarea key={key} ref={(node) => {
+                  const map = getMap(lineCollectionRef);
 
-              if (node) {
-                map.set(key, node);
-              } else {
-                map.delete(key);
-              }
-            }} value={value} onKeyDown={handleTextareaKeyDown} onChange={handleTextareaChange} onFocus={handleTextareaFocus} rows={calculatedRows} className={`w-full rounded-[10px] px-15 text-white text-26 caret-white resize-none overflow-y-hidden bg-black-dark ${key === currentFocusLine.key && "border-1 border-solid border-white"}`} />
-          )
-        })}
-      </div>
-      <SaveButton />
-    </main>
+                  if (node) {
+                    map.set(key, node);
+                  } else {
+                    map.delete(key);
+                  }
+                }} value={value} onKeyDown={handleTextareaKeyDown} onChange={handleTextareaChange} onFocus={handleTextareaFocus} rows={calculatedRows} className={`w-full rounded-[10px] px-15 text-white text-26 caret-white resize-none overflow-y-hidden bg-black-dark ${key === currentFocusLine.key && "border-1 border-solid border-white"}`} />
+              )
+            })}
+          </Container>
+          <SaveButton mode={docMode} title={title} lineCollection={lineCollection} />
+        </Container>
+      </main>
+    </Layout>
   )
 }
+
+EditDocPage.propTypes = {
+  currentDocData: PropTypes.object,
+};

@@ -10,13 +10,17 @@ export const createAuthSlice = (set, getState) => ({
   userAllDocs: {},
   onlineUserList: [],
   addUserDocsNumber: () => set((state) => ({ userDocsNumber: state.userDocsNumber + 1 })),
-  asyncLogIn: async () => {
+  asyncLogIn: async (isLogInWithSpecificUrl, theSpecificUrl) => {
     try {
       const provider = new GoogleAuthProvider();
       const response = await signInWithPopup(auth, provider);
       const { uid, displayName } = response.user;
 
       set((state) => ({ ...state, userId: uid, userName: displayName, isLogIn: true }));
+
+      if (isLogInWithSpecificUrl) {
+        await getState().asyncGetSpecificDoc(theSpecificUrl);
+      }
 
       await getState().asyncCheckEnrollUser(uid, displayName);
       await getState().asyncUpdateOnlineUser(uid, true);
@@ -31,7 +35,7 @@ export const createAuthSlice = (set, getState) => ({
       const currentWorkingUniqueDocId = getState().uniqueDocId;
       await getState().asyncUpdateOnlineUser(userId, false);
       await getState().asyncDeleteConcurrentUserList(currentWorkingUniqueDocId);
-      set((state) => ({ ...state, isLogIn: false, uniqueDocId: "", docMode: "", currentDocData: [], userId: "", userName: "", userDocsNumber: 0, userAllDocs: {}, autoSaveNum: 0 }));
+      set((state) => ({ ...state, isLogIn: false, uniqueDocId: "", docMode: "", currentDocData: {}, userId: "", userName: "", userDocsNumber: 0, userAllDocs: {}, autoSaveNum: 0 }));
       signOut(auth);
     } catch ({ name, message }) {
       set((state) => ({ ...state, errorMessage: message , errorName: name }));

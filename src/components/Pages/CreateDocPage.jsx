@@ -4,6 +4,7 @@ import useNoLogInRedirect from "../../hooks/useNoLogInRedirect";
 import getMap from "../../utils/getMap";
 import SaveButton from "../Button/SaveButton";
 import Container from "../UI/Container";
+import Layout from "../UI/Layout";
 
 export default function CreateDocPage() {
   const initialKey = uuidv4();
@@ -124,38 +125,36 @@ export default function CreateDocPage() {
     const map = getMap(lineCollectionRef);
     const node = map.get(currentFocusLine.key);
 
-    if (isBackspaceTriggerRef.current) {
-      node.focus();
-      node.setSelectionRange(lineStringLengthRef.current, lineStringLengthRef.current);
-    } else {
-      node.focus();
-    }
-
+    node.focus();
+    node.setSelectionRange(lineStringLengthRef.current, lineStringLengthRef.current);
+    
     isBackspaceTriggerRef.current = false;
   }, [currentFocusLine])
 
   return (
-    <main className="flex justify-between items-start gap-20 px-70 pb-50 pt-130 bg-black-dark">
-      <Container style="w-[88%] flex flex-col gap-2">
-        <input type="text" placeholder="제목" value={title} onChange={handleInputChange} className="border-1 border-solid border-white rounded-[10px] px-15 py-5 text-black text-30 caret-black bg-gray-1 mb-15" />
-        {lineCollection.map(lineValue => {
-          const { key, value, height } = lineValue;
-          const calculatedRows = Math.floor(height / 39);
+    <Layout>
+      <main className="flex justify-between items-start gap-20 px-70 pb-50 pt-130 bg-black-dark">
+        <Container style="w-[88%] flex flex-col gap-2">
+          <input type="text" placeholder="제목" value={title} onChange={handleInputChange} className="border-1 border-solid border-white rounded-[10px] px-15 py-5 text-black text-30 caret-black bg-gray-1 mb-15" />
+          {lineCollection.map(lineValue => {
+            const { key, value, height } = lineValue;
+            const calculatedRows = Math.floor(height / 39);
 
-          return (
-            <textarea key={key} ref={(node) => {
-              const map = getMap(lineCollectionRef);
+            return (
+              <textarea key={key} ref={(node) => {
+                const map = getMap(lineCollectionRef);
 
-              if (node) {
-                map.set(key, node);
-              } else {
-                map.delete(key);
-              }
-            }} value={value} onKeyDown={handleTextareaKeyDown} onChange={handleTextareaChange} onFocus={handleTextareaFocus} rows={calculatedRows} className={`w-full rounded-[10px] px-15 text-white text-26 caret-white resize-none overflow-y-hidden bg-black-dark ${key === currentFocusLine.key && "border-1 border-solid border-white"}`} />
-          )
-        })}
-      </Container>
-      <SaveButton mode={docMode} title={title} lineCollection={lineCollection} />
-    </main>
+                if (node) {
+                  map.set(key, node);
+                } else {
+                  map.delete(key);
+                }
+              }} value={value} onKeyDown={handleTextareaKeyDown} onChange={handleTextareaChange} onFocus={handleTextareaFocus} rows={calculatedRows} className={`w-full rounded-[10px] px-15 text-white text-26 caret-white resize-none overflow-y-hidden bg-black-dark ${key === currentFocusLine.key && "border-1 border-solid border-white"}`} />
+            )
+          })}
+        </Container>
+        <SaveButton mode={docMode} title={title} lineCollection={lineCollection} />
+      </main>
+    </Layout>
   )
 }

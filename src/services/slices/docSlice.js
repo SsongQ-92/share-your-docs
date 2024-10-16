@@ -6,12 +6,36 @@ export const createDocSlice = (set, getState) => ({
   uniqueDocId: "",
   docMode: "",
   autoSaveNum: 0,
-  currentDocData: [],
+  currentDocData: {},
   setUniqueDocId: (uniqueId) => set((state) => ({ ...state, uniqueDocId: uniqueId })),
   asyncClearDocInfo: async () => {
     const currentWorkingUniqueDocId = getState().uniqueDocId;
     await getState().asyncDeleteConcurrentUserList(currentWorkingUniqueDocId);
-    set((state) => ({ ...state, uniqueDocId: "", docMode: "", currentDocData: [], autoSaveNum: 0 }));
+    set((state) => ({ ...state, uniqueDocId: "", docMode: "", currentDocData: {}, autoSaveNum: 0 }));
+  },
+  asyncCheckSpecificDoc: async (param) => {
+    try {
+      const dbRef = ref(db, "docs");
+      const response = await get(child(dbRef, `/${param}`));
+      const parsedResponse = response.val();
+
+      if (parsedResponse === null) {
+        set((state) => ({ ...state, isNoExistDocUrlError: true }))
+      }
+    } catch ({ name, message }) {
+      set((state) => ({ ...state, errorMessage: message , errorName: name }));
+    }
+  },
+  asyncGetSpecificDoc: async (param) => {
+    try {
+      const dbRef = ref(db, "docs");
+      const response = await get(child(dbRef, `/${param}`));
+      const parsedResponse = response.val();
+
+      set((state) => ({ ...state, currentDocData: parsedResponse }));
+    } catch ({ name, message }) {
+      set((state) => ({ ...state, errorMessage: message , errorName: name }));
+    }
   },
   asyncGetUserDocList: async (uid) => {
     try {

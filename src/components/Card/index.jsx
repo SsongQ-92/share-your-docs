@@ -12,7 +12,7 @@ export default function Card({ id, title, contents, createdAt, modifiedAt }) {
     <div className="flex flex-col items-start justify-center gap-5 w-full border-2 border-solid border-red-1 rounded-[15px] px-20 py-10">
       <p className="flex items-center gap-10">
         <span className="text-red-1 text-20">1️⃣ Link: </span>
-        <Link to={`/docs/${id}`}>
+        <Link to={`/docs/${id}`} target="_blank">
           <span className="text-white text-18 underline">http://localhost:5173/docs/{id}</span>
         </Link>
         {title}
