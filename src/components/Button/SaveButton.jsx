@@ -1,5 +1,5 @@
 import PropTypes from "prop-types";
-import { memo, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { NO_TITLE_VALUE_ERROR } from "../../constants/errorMessage";
 import { useBoundStore } from "../../store";
@@ -40,12 +40,24 @@ const SaveButton = memo(function SaveButton({ mode, title, lineCollection }) {
         contents: lineCollection,
         author: userName,
         authorId: userId,
-        parsedDate, 
+        createdAt: parsedDate,
+        modifiedAt: null,
       };
   
       asyncSaveDoc(newDocId, docData);
       addUserDocsNumber();
       setSaveInfo(prev => ({ ...prev, isSaveClickedOnce: true }));
+    } else if (mode === "create" && saveInfo.isSaveClickedOnce === true) {
+      const date = new Date();
+      const parsedDate = Date.parse(date);
+  
+      const docData = {
+        title,
+        contents: lineCollection,
+        modifiedAt: parsedDate, 
+      };
+  
+      asyncSaveDoc(uniqueDocId, docData);
     }
   }
 
@@ -56,6 +68,34 @@ const SaveButton = memo(function SaveButton({ mode, title, lineCollection }) {
       setErrorMessage(message);
     }
   }
+
+  useEffect(() => {
+    const autoSave = () => {
+      const date = new Date();
+      const parsedDate = Date.parse(date);
+  
+      const docData = {
+        title,
+        contents: lineCollection,
+        modifiedAt: parsedDate, 
+      };
+  
+      asyncSaveDoc(uniqueDocId, docData);
+      setSaveInfo((prev) => ({ ...prev, autoSaveNum: prev.autoSaveNum + 1 }));
+    };
+
+    let timer;
+
+    if (saveInfo.isSaveClickedOnce) {
+      timer = setInterval(autoSave, 20000);
+    }
+
+    return () => {
+      if (timer) {
+        clearInterval(timer);
+      }
+    }
+  }, [saveInfo.isSaveClickedOnce, asyncSaveDoc, lineCollection, title, uniqueDocId])
 
   return (
     <div className="flex flex-col gap-18 w-200 flex-shrink-0">
@@ -77,12 +117,12 @@ const SaveButton = memo(function SaveButton({ mode, title, lineCollection }) {
         </p>
       }
       {(saveInfo.autoSaveNum > 0) &&
-        <p className="flex flex-col w-200 p-10 bg-gray-6 text-purple-light text-20 break-words">
+        <div className="flex flex-col w-200 p-10 bg-gray-6 text-purple-light text-20 break-words">
           <span>자동 저장이 완료 되었습니다.</span>
           <div className="flex justify-end">
-            <span className="bg-orange rounded-full text-orange-light">{saveInfo.autoSaveNum}</span>
+            <span className="w-40 h-40 flex-center bg-purple rounded-full text-violet-light text-17">{saveInfo.autoSaveNum}</span>
           </div>
-        </p>
+        </div>
       }
     </div>
   )

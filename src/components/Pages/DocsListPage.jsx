@@ -33,7 +33,7 @@ export default function DocsListPage() {
       <span className="flex-shrink-0 w-150 p-10 pl-20 bg-gray-6 text-white text-24">나의 문서</span>
       <Container style="w-full flex flex-col gap-30">
         {sortedUserDocsValues.map((value) => {
-          return <Card key={value.id} id={value.id} contents={value.contents} title={value.title} parsedDate={value.parsedDate} />
+          return <Card key={value.id} id={value.id} contents={value.contents} title={value.title} createdAt={value.createdAt} modifiedAt={value.modifiedAt} />
         })}
       </Container>
     </main>

@@ -1,3 +1,4 @@
+import { getAuth } from "firebase/auth";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useBoundStore } from "../store";
@@ -6,13 +7,16 @@ const useNoLogInRedirect = () => {
   const navigate = useNavigate();
   const isLogIn = useBoundStore((state) => state.isLogIn);
 
+  const auth = getAuth();
+  const user = auth.currentUser;
+
   useEffect(() => {
-    if (!isLogIn) {
+    if (!isLogIn || !user) {
       navigate("/");
     }
-  }, [isLogIn, navigate])
+  }, [isLogIn, navigate, user])
   
-  if (!isLogIn) {
+  if (!isLogIn || !user) {
     return null;
   }
 }

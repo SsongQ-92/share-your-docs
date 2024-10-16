@@ -1,4 +1,8 @@
 const getDate = (parsedDate) => {
+  if (parsedDate === null) {
+    return null;
+  } 
+
   const todayDate = new Date(parsedDate);
 
   const currentYear = todayDate.getFullYear();
