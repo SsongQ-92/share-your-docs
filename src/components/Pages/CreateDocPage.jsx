@@ -18,8 +18,6 @@ export default function CreateDocPage() {
   const isBackspaceTriggerRef = useRef(false);
   const lineStringLengthRef = useRef(0);
   
-  const docMode = "create";
-
   const handleInputChange = (e) => {
     setTitle(e.target.value);
   }
@@ -153,7 +151,7 @@ export default function CreateDocPage() {
             )
           })}
         </Container>
-        <SaveButton mode={docMode} title={title} lineCollection={lineCollection} />
+        <SaveButton title={title} lineCollection={lineCollection} />
       </main>
     </Layout>
   )

@@ -1,24 +1,26 @@
 import PropTypes from "prop-types";
-import { memo, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { NO_TITLE_VALUE_ERROR, TOO_MANY_USER_EDITING_DOC } from "../../constants/errorMessage";
 import { useBoundStore } from "../../store";
+import AutoSaveNoti from "../Noti/AutoSaveNoti";
+import ErrorMessageNoti from "../Noti/ErrorMessageNoti";
+import SaveButtonClickNoti from "../Noti/SaveButtonClickNoti";
 
-const SaveButton = memo(function SaveButton({ mode, title, lineCollection }) {
+export default function SaveButton({ title, lineCollection }) {
   const [isTitleError, setIsTitleError] = useState(false);
   const [isSaveClickedOnce, setIsSaveClickedOnce] = useState(false);
-  const { userId, userName, uniqueDocId, errorMessage, autoSaveNum, setUniqueDocId, setErrorMessage, addUserDocsNumber, asyncSaveDoc, asyncUpdateDocConcurrent } = useBoundStore((state) => ({
+  const { userId, userName, uniqueDocId, errorMessage, addUserDocsNumber, asyncSaveDoc, asyncUpdateDocConcurrent } = useBoundStore((state) => ({
     userId: state.userId,
     userName: state.userName,
     uniqueDocId: state.uniqueDocId,
     errorMessage: state.errorMessage,
-    autoSaveNum: state.autoSaveNum,
-    setUniqueDocId: state.setUniqueDocId,
-    setErrorMessage: state.setErrorMessage,
     addUserDocsNumber: state.addUserDocsNumber,
     asyncSaveDoc: state.asyncSaveDoc,
     asyncUpdateDocConcurrent: state.asyncUpdateDocConcurrent,
   }));
+
+  const url = `https://share-your-docs.netlify.app/docs/${uniqueDocId}`;
 
   const handleSaveButtonClick = () => {
     const isTitleNull = title.length === 0 ? true : false;
@@ -26,14 +28,12 @@ const SaveButton = memo(function SaveButton({ mode, title, lineCollection }) {
     
     if (isTitleNull) return;
 
-    if (mode === "create" && isSaveClickedOnce === false) {
+    if (isSaveClickedOnce === false) {
       const date = new Date();
       const parsedDate = Date.parse(date);
       const randomlyCreatedId = uuidv4(); 
       const newDocId = userName[0] + userId.slice(2, 5) + randomlyCreatedId;
-  
-      setUniqueDocId(newDocId);
-  
+    
       const docData = {
         id: newDocId,
         title,
@@ -48,7 +48,7 @@ const SaveButton = memo(function SaveButton({ mode, title, lineCollection }) {
       asyncSaveDoc(newDocId, docData);
       addUserDocsNumber();
       setIsSaveClickedOnce(true);
-    } else if (mode === "create" && isSaveClickedOnce === true) {
+    } else if (isSaveClickedOnce === true) {
       const date = new Date();
       const parsedDate = Date.parse(date);
   
@@ -59,14 +59,6 @@ const SaveButton = memo(function SaveButton({ mode, title, lineCollection }) {
       };
   
       asyncUpdateDocConcurrent(uniqueDocId, docData, false);
-    }
-  }
-
-  const handleURLCopyClipBoard = async () => {
-    try {
-      await navigator.clipboard.writeText(uniqueDocId);
-    } catch ({ message }) {
-      setErrorMessage(message);
     }
   }
 
@@ -100,43 +92,17 @@ const SaveButton = memo(function SaveButton({ mode, title, lineCollection }) {
   return (
     <div className="flex flex-col gap-18 w-200 flex-shrink-0">
       <button className="flex-center w-80 h-50 border-2 border-solid border-white bg-gray-8 rounded-[15px] text-white text-18 hover:bg-black-light" onClick={handleSaveButtonClick}>저장하기</button>
-      {uniqueDocId && 
-        <div className="flex flex-col gap-20">
-          <p className="w-200 p-10 bg-gray-6 text-white text-20 break-words underline cursor-pointer hover:bg-black-light" onClick={handleURLCopyClipBoard}>
-            https://share-your-docs.netlify.app/docs/{uniqueDocId}
-          </p>
-          <p className="flex flex-col w-200 p-10 bg-gray-6 text-purple-light text-20 break-words">
-            <span>저장이 완료 되었습니다. 20초 간격으로 자동 저장이 됩니다.</span>
-            <span>위의 링크를 클릭하여 복사하세요</span>
-          </p>
-        </div>
-      }
-      {isTitleError &&
-        <p className="w-200 p-10 bg-gray-6 text-red text-22 break-words hover:bg-black-light">
-          {NO_TITLE_VALUE_ERROR}
-        </p>
-      }
+      {uniqueDocId && <SaveButtonClickNoti url={url} />}
+      {isTitleError && <ErrorMessageNoti errorText={NO_TITLE_VALUE_ERROR} />}
       {errorMessage === TOO_MANY_USER_EDITING_DOC &&
-        <p className="w-200 p-10 bg-gray-6 text-red text-22 break-words hover:bg-black-light">
-          {TOO_MANY_USER_EDITING_DOC}
-        </p>
+        <ErrorMessageNoti errorText={TOO_MANY_USER_EDITING_DOC} />
       }
-      {(autoSaveNum > 0) &&
-        <div className="flex flex-col w-200 p-10 bg-gray-6 text-purple-light text-20 break-words">
-          <span>자동 저장이 완료 되었습니다.</span>
-          <div className="flex justify-end">
-            <span className="w-40 h-40 flex-center bg-purple rounded-full text-violet-light text-17">{autoSaveNum}</span>
-          </div>
-        </div>
-      }
+      <AutoSaveNoti />
     </div>
   )
-});
-
-export default SaveButton;
+}
 
 SaveButton.propTypes = {
-  mode: PropTypes.string.isRequired,
   title: PropTypes.string,
   lineCollection: PropTypes.arrayOf(
     PropTypes.shape({

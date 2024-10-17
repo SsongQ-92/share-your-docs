@@ -1,10 +1,12 @@
 import PropTypes from "prop-types";
 import { useEffect, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
+import { NO_TITLE_VALUE_ERROR, TOO_MANY_USER_EDITING_DOC } from "../../constants/errorMessage";
+import { useBoundStore } from "../../store";
 import changeDayFormat from "../../utils/changeDayFormat";
 import getDate from "../../utils/getDate";
 import getMap from "../../utils/getMap";
-import SaveButton from "../Button/SaveButton";
+import ErrorMessageNoti from "../Noti/ErrorMessageNoti";
 import Container from "../UI/Container";
 import Layout from "../UI/Layout";
 
@@ -13,12 +15,12 @@ export default function EditDocPage({ currentDocData }) {
   const [title, setTitle] = useState(initialTitle);
   const [lineCollection, setLineCollection] = useState(contents);
   const [currentFocusLine, setCurrentFocusLine] = useState({ key: contents[contents.length - 1].key, index: contents[contents.length - 1].index });
+  const errorMessage = useBoundStore(state => state.errorMessage);
 
   const lineCollectionRef = useRef(null);
   const isBackspaceTriggerRef = useRef(false);
   const lineStringLengthRef = useRef(contents[contents.length - 1].value.length);
   
-  const docMode = "edit";
   const createdDate = getDate(createdAt);
   const modifiedDate = getDate(modifiedAt);
 
@@ -161,7 +163,12 @@ export default function EditDocPage({ currentDocData }) {
               )
             })}
           </Container>
-          <SaveButton mode={docMode} title={title} lineCollection={lineCollection} />
+          <Container style="flex flex-col gap-18 w-200 flex-shrink-0">
+            {title === "" && <ErrorMessageNoti errorText={NO_TITLE_VALUE_ERROR} />}
+            {errorMessage === TOO_MANY_USER_EDITING_DOC &&
+              <ErrorMessageNoti errorText={TOO_MANY_USER_EDITING_DOC} />
+            }
+          </Container>
         </Container>
       </main>
     </Layout>

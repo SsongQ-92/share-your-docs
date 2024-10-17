@@ -7,7 +7,6 @@ export const createDocSlice = (set, getState) => ({
   docMode: "",
   autoSaveNum: 0,
   currentDocData: {},
-  setUniqueDocId: (uniqueId) => set((state) => ({ ...state, uniqueDocId: uniqueId })),
   asyncClearDocInfo: async () => {
     const currentWorkingUniqueDocId = getState().uniqueDocId;
     await getState().asyncDeleteConcurrentUserList(currentWorkingUniqueDocId);
@@ -52,6 +51,8 @@ export const createDocSlice = (set, getState) => ({
   },
   asyncSaveDoc: async (uniqueId, docData) => {
     try {
+      set((state) => ({ ...state, uniqueDocId: uniqueId }));
+      
       await getState().asyncSaveDocOnDoc(uniqueId, docData);
       await getState().asyncSaveDocOnUser(uniqueId, docData);
     } catch ({ name, message }) {

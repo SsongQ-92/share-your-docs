@@ -1,5 +1,5 @@
 const getDate = (parsedDate) => {
-  if (parsedDate === null) {
+  if (parsedDate === null || parsedDate === undefined) {
     return null;
   } 
 
