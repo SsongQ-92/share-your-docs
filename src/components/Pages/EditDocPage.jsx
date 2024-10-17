@@ -14,6 +14,7 @@ import AutoSaveNoti from "../Noti/AutoSaveNoti";
 import ErrorMessageNoti from "../Noti/ErrorMessageNoti";
 import Container from "../UI/Container";
 import Layout from "../UI/Layout";
+import checkDeepEquality from "../../utils/checkDeepEquality";
 
 export default function EditDocPage({ currentDocData }) {
   const { author, authorId, id, createdAt, modifiedAt, title: initialTitle, contents } = currentDocData;
@@ -158,7 +159,27 @@ export default function EditDocPage({ currentDocData }) {
       setThisModifiedAt(newModifiedAt);
       otherUserFocusingLineKey.current = otherUserLine;
       lineStringLengthRef.current = currentWorkingWordsLength;
-      setLineCollection(newContents);
+      const isLineCollectionChanged = checkDeepEquality(newContents, lineCollection);
+
+      if (isLineCollectionChanged === false) {
+        setLineCollection((prev) => {
+          let newLineCollection = [];
+
+          for (let i = 0; i < newContents.length; i++) {
+            const prevLineObject = prev[i];
+            const newLineObject = newContents[i];
+
+            if (prevLineObject) {
+              newLineCollection.push({ ...prevLineObject, ...newLineObject });
+            } else {
+              newLineCollection.push(newLineObject);
+            }
+          }
+
+          return newLineCollection;
+        });
+      }
+
       if (changedFocusingLine) {
         setCurrentFocusLine((prev) => ({ ...prev, index: changedFocusingLineIndex }));
       } else {
@@ -175,7 +196,7 @@ export default function EditDocPage({ currentDocData }) {
     return () => {
       off(dbRef, "value", handleValueChanged);
     }
-  }, []);
+  }, [id, handleValueChanged]);
 
   useEffect(() => {
     const map = getMap(lineCollectionRef);
