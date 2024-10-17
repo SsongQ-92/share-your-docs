@@ -17,7 +17,9 @@ const useAutoSaveDebounce = (id, title, lineCollection, currentFocusLineKey, del
     };
 
     const timerId = setTimeout(() => {
-      asyncUpdateDocConcurrent(id, docData, true, currentFocusLineKey);
+      if (id) {
+        asyncUpdateDocConcurrent(id, docData, true, currentFocusLineKey);
+      }
     }, delay);
     
     return () => {

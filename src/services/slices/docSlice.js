@@ -4,15 +4,14 @@ import { db } from "../../firebase";
 
 export const createDocSlice = (set, getState) => ({
   uniqueDocId: "",
-  docMode: "",
   autoSaveNum: 0,
   currentDocData: {},
-  concurrentDocUser: {},
-  concurrentDocOtherUserName: [],
+  concurrentDocOtherUserName: "",
+  isChangingDoc: false,
   asyncClearDocInfo: async () => {
     const currentWorkingUniqueDocId = getState().uniqueDocId;
     await getState().asyncDeleteConcurrentUserList(currentWorkingUniqueDocId);
-    set((state) => ({ ...state, uniqueDocId: "", docMode: "", currentDocData: {}, autoSaveNum: 0 }));
+    set((state) => ({ ...state, uniqueDocId: "", currentDocData: {}, autoSaveNum: 0, concurrentDocOtherUserName: "" }));
   },
   asyncCheckSpecificDoc: async (param) => {
     try {
@@ -53,10 +52,10 @@ export const createDocSlice = (set, getState) => ({
   },
   asyncSaveDoc: async (uniqueId, docData) => {
     try {
-      set((state) => ({ ...state, uniqueDocId: uniqueId }));
-      
       await getState().asyncSaveDocOnDoc(uniqueId, docData);
       await getState().asyncSaveDocOnUser(uniqueId, docData);
+
+      set((state) => ({ ...state, uniqueDocId: uniqueId }));
     } catch ({ name, message }) {
       set((state) => ({ ...state, errorMessage: message , errorName: name }));
     }
@@ -76,7 +75,7 @@ export const createDocSlice = (set, getState) => ({
       set((state) => ({ ...state, errorMessage: message , errorName: name }));
     }
   },
-  asyncGetDocConcurrentUser: async (uniqueId) => {
+  asyncGetDocConcurrent: async (uniqueId) => {
     try {
       const dbRef = ref(db, "docs");
       const response = await get(child(dbRef, `/${uniqueId}/concurrentWorkingUser`));
@@ -96,6 +95,8 @@ export const createDocSlice = (set, getState) => ({
     }
   },
   asyncUpdateDocConcurrent: async (uniqueId, docData, isAuto, currentFocusLineKey) => {
+    set((state) => ({ ...state, isChangingDoc: true }));
+
     try {
       const dbRef = ref(db, "docs");
       const response = await get(child(dbRef, `/${uniqueId}/concurrentWorkingUser`));
@@ -124,13 +125,14 @@ export const createDocSlice = (set, getState) => ({
         }
 
         await getState().asyncSaveDocOnDoc(uniqueId, updatedDocData);
-        await getState().asyncSaveDocOnUser(uniqueId, updatedDocData);
+        await getState().asyncSaveDocOnUser(uniqueId, docData);
 
         if (isAuto) {
           set((state) => ({ ...state, autoSaveNum: state.autoSaveNum + 1 }));
         }
 
         set((state) => ({ ...state, errorMessage: "" }));
+        set((state) => ({ ...state, isChangingDoc: false }));
       } else {
         set((state) => ({ ...state, errorMessage: TOO_MANY_USER_EDITING_DOC }));
       }

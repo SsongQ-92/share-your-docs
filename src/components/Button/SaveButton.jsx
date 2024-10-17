@@ -6,10 +6,10 @@ import { useBoundStore } from "../../store";
 import AutoSaveNoti from "../Noti/AutoSaveNoti";
 import ErrorMessageNoti from "../Noti/ErrorMessageNoti";
 import SaveButtonClickNoti from "../Noti/SaveButtonClickNoti";
+import useAutoSaveDebounce from "../../hooks/useAutoSaveDebounce";
 
 export default function SaveButton({ title, lineCollection, currentFocusLineKey }) {
   const [isTitleError, setIsTitleError] = useState(false);
-  const [isSaveClickedOnce, setIsSaveClickedOnce] = useState(false);
   const { userId, userName, uniqueDocId, errorMessage, addUserDocsNumber, asyncSaveDoc, asyncUpdateDocConcurrent } = useBoundStore((state) => ({
     userId: state.userId,
     userName: state.userName,
@@ -28,7 +28,7 @@ export default function SaveButton({ title, lineCollection, currentFocusLineKey 
     
     if (isTitleNull) return;
 
-    if (isSaveClickedOnce === false) {
+    if (uniqueDocId === "") {
       const date = new Date();
       const parsedDate = Date.parse(date);
       const randomlyCreatedId = uuidv4(); 
@@ -47,8 +47,7 @@ export default function SaveButton({ title, lineCollection, currentFocusLineKey 
   
       asyncSaveDoc(newDocId, docData);
       addUserDocsNumber();
-      setIsSaveClickedOnce(true);
-    } else if (isSaveClickedOnce === true) {
+    } else {
       const date = new Date();
       const parsedDate = Date.parse(date);
   
@@ -61,6 +60,8 @@ export default function SaveButton({ title, lineCollection, currentFocusLineKey 
       asyncUpdateDocConcurrent(uniqueDocId, docData, false, currentFocusLineKey);
     }
   }
+
+  useAutoSaveDebounce(uniqueDocId, title, lineCollection, currentFocusLineKey, 900);
 
   useEffect(() => {
     const autoSave = () => {
@@ -78,7 +79,7 @@ export default function SaveButton({ title, lineCollection, currentFocusLineKey 
 
     let timer;
 
-    if (isSaveClickedOnce) {
+    if (uniqueDocId) {
       timer = setInterval(autoSave, 20000);
     }
 
@@ -87,7 +88,7 @@ export default function SaveButton({ title, lineCollection, currentFocusLineKey 
         clearInterval(timer);
       }
     }
-  }, [isSaveClickedOnce, asyncUpdateDocConcurrent, lineCollection, title, uniqueDocId, currentFocusLineKey])
+  }, [asyncUpdateDocConcurrent, lineCollection, title, uniqueDocId, currentFocusLineKey])
 
   return (
     <div className="flex flex-col gap-18 w-200 flex-shrink-0">

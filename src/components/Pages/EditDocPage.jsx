@@ -1,32 +1,41 @@
+import { off, onValue, ref } from "firebase/database";
 import PropTypes from "prop-types";
 import { useEffect, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { NO_TITLE_VALUE_ERROR, TOO_MANY_USER_EDITING_DOC } from "../../constants/errorMessage";
+import { db } from "../../firebase";
 import useAutoSaveDebounce from "../../hooks/useAutoSaveDebounce";
 import { useBoundStore } from "../../store";
 import changeDayFormat from "../../utils/changeDayFormat";
 import getDate from "../../utils/getDate";
 import getMap from "../../utils/getMap";
+import Chip from "../Chip";
 import AutoSaveNoti from "../Noti/AutoSaveNoti";
-import ConcurrentDocUser from "../Noti/ConcurrentDocUser";
 import ErrorMessageNoti from "../Noti/ErrorMessageNoti";
 import Container from "../UI/Container";
 import Layout from "../UI/Layout";
 
 export default function EditDocPage({ currentDocData }) {
-  const { author, id, createdAt, modifiedAt, title: initialTitle, contents } = currentDocData;
+  const { author, authorId, id, createdAt, modifiedAt, title: initialTitle, contents } = currentDocData;
   const [title, setTitle] = useState(initialTitle);
   const [lineCollection, setLineCollection] = useState(contents);
   const [currentFocusLine, setCurrentFocusLine] = useState({ key: contents[contents.length - 1].key, index: contents[contents.length - 1].index });
-  // const [otherUserFocusingKeys, setOtherUserFocusingKeys] = useState([]);
-  const errorMessage = useBoundStore(state => state.errorMessage);
+  const [thisModifiedAt, setThisModifiedAt] = useState(modifiedAt);
+  const { errorMessage, isChangingDoc, userId, asyncGetUserNameWithUserId, concurrentDocOtherUserName } = useBoundStore(state => ({ 
+    errorMessage: state.errorMessage,
+    isChangingDoc: state.isChangingDoc,
+    userId: state.userId,
+    asyncGetUserNameWithUserId: state.asyncGetUserNameWithUserId,
+    concurrentDocOtherUserName: state.concurrentDocOtherUserName,
+  }));
 
   const lineCollectionRef = useRef(null);
   const isBackspaceTriggerRef = useRef(false);
   const lineStringLengthRef = useRef(contents[contents.length - 1].value.length);
+  const otherUserFocusingLineKey = useRef(null);
   
   const createdDate = getDate(createdAt);
-  const modifiedDate = getDate(modifiedAt);
+  const modifiedDate = getDate(thisModifiedAt);
 
   const handleInputChange = (e) => {
     setTitle(e.target.value);
@@ -130,6 +139,45 @@ export default function EditDocPage({ currentDocData }) {
   useAutoSaveDebounce(id, title, lineCollection, currentFocusLine.key, 900);
 
   useEffect(() => {
+    const dbRef = ref(db, `docs/${id}`);
+
+    const handleValueChanged = async (snapshot) => {
+      if (snapshot.exists() && isChangingDoc === false) {
+        const parsedResponse = snapshot.val();
+
+        const newContents = parsedResponse.contents;
+        const newModifiedAt = parsedResponse.modifiedAt;
+        const newConcurrentWorkingUser = parsedResponse.concurrentWorkingUser;
+
+        const otherUserId = Object.keys(newConcurrentWorkingUser).filter(value => value !== userId)[0];
+        const otherUserLine = newConcurrentWorkingUser[otherUserId];
+
+        const currentWorkingWordsLength = lineCollection.filter(value => value.key === currentFocusLine.key)[0].value.length;
+        const changedFocusingLine = newContents.filter(value => value.id === currentFocusLine.key).length === 0 ? null : newContents.filter(value => value.id === currentFocusLine.key);
+        const changedFocusingLineIndex = changedFocusingLine[0].index;
+
+        await asyncGetUserNameWithUserId(otherUserId);
+
+        setThisModifiedAt(newModifiedAt);
+        otherUserFocusingLineKey.current = otherUserLine;
+        lineStringLengthRef.current = currentWorkingWordsLength;
+        setLineCollection(newContents);
+        if (changedFocusingLine) {
+          setCurrentFocusLine((prev) => ({ ...prev, index: changedFocusingLineIndex }));
+        } else {
+          setCurrentFocusLine((prev) => ({ ...prev, key: newContents[newContents.length - 1].key, index: newContents[newContents.length - 1].index }));
+        }
+      }
+    };
+
+    onValue(dbRef, handleValueChanged);
+
+    return () => {
+      off(dbRef, "value", handleValueChanged);
+    }
+  }, [isChangingDoc, id, asyncGetUserNameWithUserId, userId, currentFocusLine.key, lineCollection]);
+
+  useEffect(() => {
     const map = getMap(lineCollectionRef);
     const node = map.get(currentFocusLine.key);
 
@@ -151,26 +199,28 @@ export default function EditDocPage({ currentDocData }) {
         </section>
         <Container style="flex justify-between items-start gap-20 w-full">
           <Container style="w-[88%] flex flex-col gap-2">
-            <input type="text" placeholder="제목" value={title} onChange={handleInputChange} className="border-1 border-solid border-white rounded-[10px] px-15 py-5 text-black text-30 caret-black bg-gray-1 mb-15" />
+            <input type="text" placeholder="제목" value={title} onChange={handleInputChange} className="border-1 border-solid border-white rounded-[10px] px-15 py-5 text-black text-30 caret-black bg-gray-1 mb-15" disabled={!(authorId === userId)} />
             {lineCollection.map(lineValue => {
               const { key, value, height } = lineValue;
               const calculatedRows = Math.floor(height / 39);
 
               return (
-                <textarea key={key} ref={(node) => {
-                  const map = getMap(lineCollectionRef);
+                <div key={key} className="relative">
+                  <textarea ref={(node) => {
+                    const map = getMap(lineCollectionRef);
 
-                  if (node) {
-                    map.set(key, node);
-                  } else {
-                    map.delete(key);
-                  }
-                }} value={value} onKeyDown={handleTextareaKeyDown} onChange={handleTextareaChange} onFocus={handleTextareaFocus} rows={calculatedRows} className={`w-full rounded-[10px] px-15 text-white text-26 caret-white resize-none overflow-y-hidden bg-black-dark ${key === currentFocusLine.key && "border-1 border-solid border-white"}`} />
+                    if (node) {
+                      map.set(key, node);
+                    } else {
+                      map.delete(key);
+                    }
+                  }} value={value} onKeyDown={handleTextareaKeyDown} onChange={handleTextareaChange} onFocus={handleTextareaFocus} rows={calculatedRows} className={`w-full rounded-[10px] px-15 text-white text-26 caret-white resize-none overflow-y-hidden bg-black-dark ${key === currentFocusLine.key && "border-1 border-solid border-white"}`} />
+                  {(key === otherUserFocusingLineKey.current && concurrentDocOtherUserName) && <Chip userName={concurrentDocOtherUserName} /> }
+                </div>
               )
             })}
           </Container>
           <Container style="flex flex-col gap-18 w-200 flex-shrink-0">
-            <ConcurrentDocUser uniqueId={id} />
             <AutoSaveNoti />
             {title === "" && <ErrorMessageNoti errorText={NO_TITLE_VALUE_ERROR} />}
             {errorMessage === TOO_MANY_USER_EDITING_DOC &&

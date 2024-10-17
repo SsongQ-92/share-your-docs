@@ -35,7 +35,7 @@ export const createAuthSlice = (set, getState) => ({
       const currentWorkingUniqueDocId = getState().uniqueDocId;
       await getState().asyncUpdateOnlineUser(userId, false);
       await getState().asyncDeleteConcurrentUserList(currentWorkingUniqueDocId);
-      set((state) => ({ ...state, isLogIn: false, uniqueDocId: "", docMode: "", currentDocData: {}, userId: "", userName: "", userDocsNumber: 0, userAllDocs: {}, autoSaveNum: 0 }));
+      set((state) => ({ ...state, isLogIn: false, uniqueDocId: "", docMode: "", currentDocData: {}, userId: "", userName: "", userDocsNumber: 0, userAllDocs: {}, autoSaveNum: 0, concurrentDocOtherUserName: "" }));
       signOut(auth);
     } catch ({ name, message }) {
       set((state) => ({ ...state, errorMessage: message , errorName: name }));
@@ -97,7 +97,7 @@ export const createAuthSlice = (set, getState) => ({
       const response = await get(child(dbRef, `/userList/${uid}`));
       const parsedResponse = response.val();
 
-      set((state) => ({ ...state, concurrentDocOtherUserName: [ ...state.concurrentDocOtherUserName, parsedResponse.userName ] }));
+      set((state) => ({ ...state, concurrentDocOtherUserName: parsedResponse.userName }));
     } catch ({ name, message }) {
       set((state) => ({ ...state, errorMessage: message , errorName: name }));
     }
