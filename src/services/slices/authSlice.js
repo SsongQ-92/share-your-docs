@@ -91,4 +91,15 @@ export const createAuthSlice = (set, getState) => ({
       set((state) => ({ ...state, errorMessage: message , errorName: name }));
     }
   },
+  asyncGetUserNameWithUserId: async (uid) => {
+    try {
+      const dbRef = ref(db, "user");
+      const response = await get(child(dbRef, `/userList/${uid}`));
+      const parsedResponse = response.val();
+
+      set((state) => ({ ...state, concurrentDocOtherUserName: [ ...state.concurrentDocOtherUserName, parsedResponse.userName ] }));
+    } catch ({ name, message }) {
+      set((state) => ({ ...state, errorMessage: message , errorName: name }));
+    }
+  }
 });

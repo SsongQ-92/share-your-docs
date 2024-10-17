@@ -1,4 +1,4 @@
-import { child, get, ref, update } from "firebase/database";
+import { child, get, onChildChanged, ref, update } from "firebase/database";
 import { db } from "../../firebase";
 import { TOO_MANY_USER_EDITING_DOC } from "../../constants/errorMessage";
 
@@ -7,6 +7,8 @@ export const createDocSlice = (set, getState) => ({
   docMode: "",
   autoSaveNum: 0,
   currentDocData: {},
+  concurrentDocUserId: [],
+  concurrentDocOtherUserName: [],
   asyncClearDocInfo: async () => {
     const currentWorkingUniqueDocId = getState().uniqueDocId;
     await getState().asyncDeleteConcurrentUserList(currentWorkingUniqueDocId);
@@ -70,6 +72,18 @@ export const createDocSlice = (set, getState) => ({
     try {
       const userId = getState().userId;
       update(ref(db, `/user/userList/${userId}/docs/${uniqueId}`), docData);
+    } catch ({ name, message }) {
+      set((state) => ({ ...state, errorMessage: message , errorName: name }));
+    }
+  },
+  asyncGetDocConcurrentUser: async (uniqueId) => {
+    try {
+      const dbRef = ref(db, `docs/${uniqueId}/concurrentWorkingUser`);
+      onChildChanged(dbRef, (snapshot) => {
+        const parsedResponse = snapshot.val();
+
+        set((state) => ({ ...state, concurrentDocUser: parsedResponse }));
+      });
     } catch ({ name, message }) {
       set((state) => ({ ...state, errorMessage: message , errorName: name }));
     }

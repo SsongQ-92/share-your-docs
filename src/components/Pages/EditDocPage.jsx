@@ -2,16 +2,18 @@ import PropTypes from "prop-types";
 import { useEffect, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { NO_TITLE_VALUE_ERROR, TOO_MANY_USER_EDITING_DOC } from "../../constants/errorMessage";
+import useAutoSaveDebounce from "../../hooks/useAutoSaveDebounce";
 import { useBoundStore } from "../../store";
 import changeDayFormat from "../../utils/changeDayFormat";
 import getDate from "../../utils/getDate";
 import getMap from "../../utils/getMap";
+import ConcurrentDocUser from "../Noti/ConcurrentDocUser";
 import ErrorMessageNoti from "../Noti/ErrorMessageNoti";
 import Container from "../UI/Container";
 import Layout from "../UI/Layout";
 
 export default function EditDocPage({ currentDocData }) {
-  const { author, createdAt, modifiedAt, title: initialTitle, contents } = currentDocData;
+  const { author, id, createdAt, modifiedAt, title: initialTitle, contents } = currentDocData;
   const [title, setTitle] = useState(initialTitle);
   const [lineCollection, setLineCollection] = useState(contents);
   const [currentFocusLine, setCurrentFocusLine] = useState({ key: contents[contents.length - 1].key, index: contents[contents.length - 1].index });
@@ -123,6 +125,8 @@ export default function EditDocPage({ currentDocData }) {
     setCurrentFocusLine((prev) => ({ ...prev, key: currentKey, index: currentIndex }));
   }
 
+  useAutoSaveDebounce(id, title, lineCollection, 900);
+
   useEffect(() => {
     const map = getMap(lineCollectionRef);
     const node = map.get(currentFocusLine.key);
@@ -137,10 +141,10 @@ export default function EditDocPage({ currentDocData }) {
     <Layout>
       <main className="flex flex-col justify-start items-center gap-40 px-70 pb-50 pt-130 bg-black-dark">
         <section className="flex justify-between items-end w-full">
-          <h1 className="text-violet-light text-30">작성자: {author}</h1>
+          <h1 className="text-violet-light text-30">최초 작성자: {author}</h1>
           <Container style="flex justify-end items-center gap-20 text-16 text-gray-3">
-            <h2>작성일: {createdDate.currentYear}년 {createdDate.currentMonth}월 {createdDate.currentDate}일 {changeDayFormat(createdDate.currentDay)} {createdDate.currentHour}시 {createdDate.currentMinute}분</h2>
-            <h2>최근수정일: {modifiedDate.currentYear}년 {modifiedDate.currentMonth}월 {modifiedDate.currentDate}일 {changeDayFormat(modifiedDate.currentDay)} {modifiedDate.currentHour}시 {modifiedDate.currentMinute}분</h2>
+            <h2>최초 작성일: {createdDate.currentYear}년 {createdDate.currentMonth}월 {createdDate.currentDate}일 {changeDayFormat(createdDate.currentDay)} {createdDate.currentHour}시 {createdDate.currentMinute}분</h2>
+            <h2>최근 수정일: {modifiedDate.currentYear}년 {modifiedDate.currentMonth}월 {modifiedDate.currentDate}일 {changeDayFormat(modifiedDate.currentDay)} {modifiedDate.currentHour}시 {modifiedDate.currentMinute}분</h2>
           </Container>
         </section>
         <Container style="flex justify-between items-start gap-20 w-full">
@@ -164,6 +168,7 @@ export default function EditDocPage({ currentDocData }) {
             })}
           </Container>
           <Container style="flex flex-col gap-18 w-200 flex-shrink-0">
+            <ConcurrentDocUser uniqueId={id} />
             {title === "" && <ErrorMessageNoti errorText={NO_TITLE_VALUE_ERROR} />}
             {errorMessage === TOO_MANY_USER_EDITING_DOC &&
               <ErrorMessageNoti errorText={TOO_MANY_USER_EDITING_DOC} />

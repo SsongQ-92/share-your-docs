@@ -15,7 +15,6 @@ export default function Card({ id, title, contents, createdAt, modifiedAt }) {
         <Link to={`/docs/${id}`} target="_blank">
           <span className="text-white text-18 underline">https://share-your-docs.netlify.app/docs/{id}</span>
         </Link>
-        {title}
       </p>
       <p className="flex items-center gap-10">
         <span className="text-red-1 text-20">2️⃣ Title: </span>
