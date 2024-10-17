@@ -1,4 +1,4 @@
-import { off, onValue, ref } from "firebase/database";
+import { off, onChildChanged, ref } from "firebase/database";
 import PropTypes from "prop-types";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
@@ -7,6 +7,7 @@ import { db } from "../../firebase";
 import useAutoSaveDebounce from "../../hooks/useAutoSaveDebounce";
 import { useBoundStore } from "../../store";
 import changeDayFormat from "../../utils/changeDayFormat";
+import checkDeepEquality from "../../utils/checkDeepEquality";
 import getDate from "../../utils/getDate";
 import getMap from "../../utils/getMap";
 import Chip from "../Chip";
@@ -14,7 +15,6 @@ import AutoSaveNoti from "../Noti/AutoSaveNoti";
 import ErrorMessageNoti from "../Noti/ErrorMessageNoti";
 import Container from "../UI/Container";
 import Layout from "../UI/Layout";
-import checkDeepEquality from "../../utils/checkDeepEquality";
 
 export default function EditDocPage({ currentDocData }) {
   const { author, authorId, id, createdAt, modifiedAt, title: initialTitle, contents } = currentDocData;
@@ -191,10 +191,10 @@ export default function EditDocPage({ currentDocData }) {
   useEffect(() => {
     const dbRef = ref(db, `docs/${id}`);
 
-    onValue(dbRef, handleValueChanged);
+    onChildChanged(dbRef, handleValueChanged);
 
     return () => {
-      off(dbRef, "value", handleValueChanged);
+      off(dbRef, "child_changed", handleValueChanged);
     }
   }, [id, handleValueChanged]);
 
