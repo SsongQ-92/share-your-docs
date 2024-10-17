@@ -1,13 +1,13 @@
-import { child, get, onChildChanged, ref, update } from "firebase/database";
-import { db } from "../../firebase";
+import { child, get, ref, update } from "firebase/database";
 import { TOO_MANY_USER_EDITING_DOC } from "../../constants/errorMessage";
+import { db } from "../../firebase";
 
 export const createDocSlice = (set, getState) => ({
   uniqueDocId: "",
   docMode: "",
   autoSaveNum: 0,
   currentDocData: {},
-  concurrentDocUserId: [],
+  concurrentDocUser: {},
   concurrentDocOtherUserName: [],
   asyncClearDocInfo: async () => {
     const currentWorkingUniqueDocId = getState().uniqueDocId;
@@ -78,45 +78,53 @@ export const createDocSlice = (set, getState) => ({
   },
   asyncGetDocConcurrentUser: async (uniqueId) => {
     try {
-      const dbRef = ref(db, `docs/${uniqueId}/concurrentWorkingUser`);
-      onChildChanged(dbRef, (snapshot) => {
-        const parsedResponse = snapshot.val();
+      const dbRef = ref(db, "docs");
+      const response = await get(child(dbRef, `/${uniqueId}/concurrentWorkingUser`));
+      const parsedResponse = response.val();
 
+      const concurrentDocUserId = parsedResponse ? Object.keys(parsedResponse) : null;
+      const prevConcurrentDocUser = getState().concurrentDocUser ?? null;
+      const prevConcurrentDocUserId = prevConcurrentDocUser ? Object.keys(prevConcurrentDocUser) : null;
+
+      const isSameWithPrev = concurrentDocUserId.length === prevConcurrentDocUserId.length && concurrentDocUserId.every(value => prevConcurrentDocUserId.includes(value));
+
+      if (!isSameWithPrev) {
         set((state) => ({ ...state, concurrentDocUser: parsedResponse }));
-      });
+      }
     } catch ({ name, message }) {
       set((state) => ({ ...state, errorMessage: message , errorName: name }));
     }
   },
-  asyncUpdateDocConcurrent: async (uniqueId, docData, isAuto) => {
+  asyncUpdateDocConcurrent: async (uniqueId, docData, isAuto, currentFocusLineKey) => {
     try {
       const dbRef = ref(db, "docs");
       const response = await get(child(dbRef, `/${uniqueId}/concurrentWorkingUser`));
       const parsedResponse = response.val();
 
       const userId = getState().userId;
+      const concurrentDocUserId = parsedResponse ? Object.keys(parsedResponse) : null;
       let isPossibleConcurrent = false;
 
-      if (parsedResponse === null) {
+      if (concurrentDocUserId === null) {
         isPossibleConcurrent = true;
-      } else if (parsedResponse.length < 2) {
+      } else if (concurrentDocUserId.length < 2) {
         isPossibleConcurrent = true;
-      } else if (parsedResponse.length === 2 && parsedResponse.includes(userId)) {
+      } else if (concurrentDocUserId.length === 2 && concurrentDocUserId.includes(userId)) {
         isPossibleConcurrent = true;
       }
 
       if (isPossibleConcurrent) {
-        let updatedDocDate;
-        const isConcurrentOnlyMe = parsedResponse === null || (parsedResponse.length === 1 && parsedResponse.includes(userId));
+        let updatedDocData;
+        const isConcurrentOnlyMe = concurrentDocUserId === null || (concurrentDocUserId.length === 1 && concurrentDocUserId.includes(userId));
 
         if (isConcurrentOnlyMe) {
-          updatedDocDate = { ...docData, concurrentWorkingUser: [ userId ] };
+          updatedDocData = { ...docData, concurrentWorkingUser: { [userId]: currentFocusLineKey } };
         } else {
-          updatedDocDate = { ...docData, concurrentWorkingUser: [ ...parsedResponse, userId ] };
+          updatedDocData = { ...docData, concurrentWorkingUser: { ...parsedResponse, [userId]: currentFocusLineKey } };
         }
 
-        await getState().asyncSaveDocOnDoc(uniqueId, updatedDocDate);
-        await getState().asyncSaveDocOnUser(uniqueId, updatedDocDate);
+        await getState().asyncSaveDocOnDoc(uniqueId, updatedDocData);
+        await getState().asyncSaveDocOnUser(uniqueId, updatedDocData);
 
         if (isAuto) {
           set((state) => ({ ...state, autoSaveNum: state.autoSaveNum + 1 }));

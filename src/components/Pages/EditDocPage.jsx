@@ -7,6 +7,7 @@ import { useBoundStore } from "../../store";
 import changeDayFormat from "../../utils/changeDayFormat";
 import getDate from "../../utils/getDate";
 import getMap from "../../utils/getMap";
+import AutoSaveNoti from "../Noti/AutoSaveNoti";
 import ConcurrentDocUser from "../Noti/ConcurrentDocUser";
 import ErrorMessageNoti from "../Noti/ErrorMessageNoti";
 import Container from "../UI/Container";
@@ -17,6 +18,7 @@ export default function EditDocPage({ currentDocData }) {
   const [title, setTitle] = useState(initialTitle);
   const [lineCollection, setLineCollection] = useState(contents);
   const [currentFocusLine, setCurrentFocusLine] = useState({ key: contents[contents.length - 1].key, index: contents[contents.length - 1].index });
+  // const [otherUserFocusingKeys, setOtherUserFocusingKeys] = useState([]);
   const errorMessage = useBoundStore(state => state.errorMessage);
 
   const lineCollectionRef = useRef(null);
@@ -125,7 +127,7 @@ export default function EditDocPage({ currentDocData }) {
     setCurrentFocusLine((prev) => ({ ...prev, key: currentKey, index: currentIndex }));
   }
 
-  useAutoSaveDebounce(id, title, lineCollection, 900);
+  useAutoSaveDebounce(id, title, lineCollection, currentFocusLine.key, 900);
 
   useEffect(() => {
     const map = getMap(lineCollectionRef);
@@ -169,6 +171,7 @@ export default function EditDocPage({ currentDocData }) {
           </Container>
           <Container style="flex flex-col gap-18 w-200 flex-shrink-0">
             <ConcurrentDocUser uniqueId={id} />
+            <AutoSaveNoti />
             {title === "" && <ErrorMessageNoti errorText={NO_TITLE_VALUE_ERROR} />}
             {errorMessage === TOO_MANY_USER_EDITING_DOC &&
               <ErrorMessageNoti errorText={TOO_MANY_USER_EDITING_DOC} />

@@ -7,7 +7,7 @@ import AutoSaveNoti from "../Noti/AutoSaveNoti";
 import ErrorMessageNoti from "../Noti/ErrorMessageNoti";
 import SaveButtonClickNoti from "../Noti/SaveButtonClickNoti";
 
-export default function SaveButton({ title, lineCollection }) {
+export default function SaveButton({ title, lineCollection, currentFocusLineKey }) {
   const [isTitleError, setIsTitleError] = useState(false);
   const [isSaveClickedOnce, setIsSaveClickedOnce] = useState(false);
   const { userId, userName, uniqueDocId, errorMessage, addUserDocsNumber, asyncSaveDoc, asyncUpdateDocConcurrent } = useBoundStore((state) => ({
@@ -42,7 +42,7 @@ export default function SaveButton({ title, lineCollection }) {
         authorId: userId,
         createdAt: parsedDate,
         modifiedAt: null,
-        concurrentWorkingUser: [],
+        concurrentWorkingUser: {},
       };
   
       asyncSaveDoc(newDocId, docData);
@@ -58,7 +58,7 @@ export default function SaveButton({ title, lineCollection }) {
         modifiedAt: parsedDate, 
       };
   
-      asyncUpdateDocConcurrent(uniqueDocId, docData, false);
+      asyncUpdateDocConcurrent(uniqueDocId, docData, false, currentFocusLineKey);
     }
   }
 
@@ -73,7 +73,7 @@ export default function SaveButton({ title, lineCollection }) {
         modifiedAt: parsedDate, 
       };
   
-      asyncUpdateDocConcurrent(uniqueDocId, docData, true);
+      asyncUpdateDocConcurrent(uniqueDocId, docData, true, currentFocusLineKey);
     };
 
     let timer;
@@ -87,7 +87,7 @@ export default function SaveButton({ title, lineCollection }) {
         clearInterval(timer);
       }
     }
-  }, [isSaveClickedOnce, asyncUpdateDocConcurrent, lineCollection, title, uniqueDocId])
+  }, [isSaveClickedOnce, asyncUpdateDocConcurrent, lineCollection, title, uniqueDocId, currentFocusLineKey])
 
   return (
     <div className="flex flex-col gap-18 w-200 flex-shrink-0">
@@ -112,4 +112,5 @@ SaveButton.propTypes = {
       height: PropTypes.number,
     }),
   ),
+  currentFocusLineKey: PropTypes.string,
 };

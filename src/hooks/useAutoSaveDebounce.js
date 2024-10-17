@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useBoundStore } from "../store";
 
-const useAutoSaveDebounce = (id, title, lineCollection, delay) => {
+const useAutoSaveDebounce = (id, title, lineCollection, currentFocusLineKey, delay) => {
   const { asyncUpdateDocConcurrent } = useBoundStore(state => ({ 
     asyncUpdateDocConcurrent: state.asyncUpdateDocConcurrent,
   }));
@@ -17,13 +17,13 @@ const useAutoSaveDebounce = (id, title, lineCollection, delay) => {
     };
 
     const timerId = setTimeout(() => {
-      asyncUpdateDocConcurrent(id, docData, true);
+      asyncUpdateDocConcurrent(id, docData, true, currentFocusLineKey);
     }, delay);
     
     return () => {
       clearTimeout(timerId);
     }
-  }, [asyncUpdateDocConcurrent, id, title, lineCollection, delay]);
+  }, [asyncUpdateDocConcurrent, id, title, lineCollection, currentFocusLineKey, delay]);
 }
 
 export default useAutoSaveDebounce;

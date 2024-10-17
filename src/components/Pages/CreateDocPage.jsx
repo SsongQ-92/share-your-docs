@@ -151,7 +151,7 @@ export default function CreateDocPage() {
             )
           })}
         </Container>
-        <SaveButton title={title} lineCollection={lineCollection} />
+        <SaveButton title={title} lineCollection={lineCollection} currentFocusLineKey={currentFocusLine.key} />
       </main>
     </Layout>
   )
