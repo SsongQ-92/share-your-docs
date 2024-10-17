@@ -1,6 +1,6 @@
 import { off, onValue, ref } from "firebase/database";
 import PropTypes from "prop-types";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { NO_TITLE_VALUE_ERROR, TOO_MANY_USER_EDITING_DOC } from "../../constants/errorMessage";
 import { db } from "../../firebase";
@@ -138,44 +138,44 @@ export default function EditDocPage({ currentDocData }) {
 
   useAutoSaveDebounce(id, title, lineCollection, currentFocusLine.key, 900);
 
+  const handleValueChanged = useCallback(async (snapshot) => {
+    if (snapshot.exists() && isChangingDoc === false) {
+      const parsedResponse = snapshot.val();
+
+      const newContents = parsedResponse.contents;
+      const newModifiedAt = parsedResponse.modifiedAt;
+      const newConcurrentWorkingUser = parsedResponse.concurrentWorkingUser;
+
+      const otherUserId = Object.keys(newConcurrentWorkingUser).filter(value => value !== userId)[0];
+      const otherUserLine = newConcurrentWorkingUser[otherUserId];
+
+      const currentWorkingWordsLength = lineCollection.filter(value => value.key === currentFocusLine.key)[0].value.length;
+      const changedFocusingLine = newContents.filter(value => value.id === currentFocusLine.key).length === 0 ? null : newContents.filter(value => value.id === currentFocusLine.key);
+      const changedFocusingLineIndex = changedFocusingLine && changedFocusingLine[0].index;
+
+      await asyncGetUserNameWithUserId(otherUserId);
+
+      setThisModifiedAt(newModifiedAt);
+      otherUserFocusingLineKey.current = otherUserLine;
+      lineStringLengthRef.current = currentWorkingWordsLength;
+      setLineCollection(newContents);
+      if (changedFocusingLine) {
+        setCurrentFocusLine((prev) => ({ ...prev, index: changedFocusingLineIndex }));
+      } else {
+        setCurrentFocusLine((prev) => ({ ...prev, key: newContents[newContents.length - 1].key, index: newContents[newContents.length - 1].index }));
+      }
+    }
+  }, [asyncGetUserNameWithUserId, currentFocusLine.key, isChangingDoc, lineCollection, userId]);
+
   useEffect(() => {
     const dbRef = ref(db, `docs/${id}`);
-
-    const handleValueChanged = async (snapshot) => {
-      if (snapshot.exists() && isChangingDoc === false) {
-        const parsedResponse = snapshot.val();
-
-        const newContents = parsedResponse.contents;
-        const newModifiedAt = parsedResponse.modifiedAt;
-        const newConcurrentWorkingUser = parsedResponse.concurrentWorkingUser;
-
-        const otherUserId = Object.keys(newConcurrentWorkingUser).filter(value => value !== userId)[0];
-        const otherUserLine = newConcurrentWorkingUser[otherUserId];
-
-        const currentWorkingWordsLength = lineCollection.filter(value => value.key === currentFocusLine.key)[0].value.length;
-        const changedFocusingLine = newContents.filter(value => value.id === currentFocusLine.key).length === 0 ? null : newContents.filter(value => value.id === currentFocusLine.key);
-        const changedFocusingLineIndex = changedFocusingLine && changedFocusingLine[0].index;
-
-        await asyncGetUserNameWithUserId(otherUserId);
-
-        setThisModifiedAt(newModifiedAt);
-        otherUserFocusingLineKey.current = otherUserLine;
-        lineStringLengthRef.current = currentWorkingWordsLength;
-        setLineCollection(newContents);
-        if (changedFocusingLine) {
-          setCurrentFocusLine((prev) => ({ ...prev, index: changedFocusingLineIndex }));
-        } else {
-          setCurrentFocusLine((prev) => ({ ...prev, key: newContents[newContents.length - 1].key, index: newContents[newContents.length - 1].index }));
-        }
-      }
-    };
 
     onValue(dbRef, handleValueChanged);
 
     return () => {
       off(dbRef, "value", handleValueChanged);
     }
-  }, [isChangingDoc, id, asyncGetUserNameWithUserId, userId, currentFocusLine.key, lineCollection]);
+  }, []);
 
   useEffect(() => {
     const map = getMap(lineCollectionRef);

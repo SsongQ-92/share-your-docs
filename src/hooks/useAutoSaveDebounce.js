@@ -25,7 +25,7 @@ const useAutoSaveDebounce = (id, title, lineCollection, currentFocusLineKey, del
     return () => {
       clearTimeout(timerId);
     }
-  }, [asyncUpdateDocConcurrent, id, title, lineCollection, currentFocusLineKey, delay]);
+  }, [asyncUpdateDocConcurrent, title, id, currentFocusLineKey, delay]);
 }
 
 export default useAutoSaveDebounce;
