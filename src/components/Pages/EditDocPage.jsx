@@ -154,7 +154,7 @@ export default function EditDocPage({ currentDocData }) {
 
         const currentWorkingWordsLength = lineCollection.filter(value => value.key === currentFocusLine.key)[0].value.length;
         const changedFocusingLine = newContents.filter(value => value.id === currentFocusLine.key).length === 0 ? null : newContents.filter(value => value.id === currentFocusLine.key);
-        const changedFocusingLineIndex = changedFocusingLine[0].index;
+        const changedFocusingLineIndex = changedFocusingLine && changedFocusingLine[0].index;
 
         await asyncGetUserNameWithUserId(otherUserId);
 
