@@ -213,17 +213,17 @@ export default function CreateDocPage() {
 
             return (
               <div key={key} className="relative">
-                  <textarea ref={(node) => {
-                    const map = getMap(lineCollectionRef);
+                <textarea ref={(node) => {
+                  const map = getMap(lineCollectionRef);
 
-                    if (node) {
-                      map.set(key, node);
-                    } else {
-                      map.delete(key);
-                    }
-                  }} value={value} onKeyDown={handleTextareaKeyDown} onChange={handleTextareaChange} onFocus={handleTextareaFocus} rows={calculatedRows} className={`w-full rounded-[10px] px-15 text-white text-26 caret-white resize-none overflow-y-hidden bg-black-dark ${key === currentFocusLine.key && "border-1 border-solid border-white"}`} />
-                  {(key === otherUserFocusingLineKey.current && concurrentDocOtherUserName) && <Chip userName={concurrentDocOtherUserName} /> }
-                </div>
+                  if (node) {
+                    map.set(key, node);
+                  } else {
+                    map.delete(key);
+                  }
+                }} value={value} onKeyDown={handleTextareaKeyDown} onChange={handleTextareaChange} onFocus={handleTextareaFocus} rows={calculatedRows} className={`w-full rounded-[10px] px-15 text-white text-26 caret-white resize-none overflow-y-hidden bg-black-dark ${key === currentFocusLine.key && "border-1 border-solid border-white"}`} />
+                {(key === otherUserFocusingLineKey.current && concurrentDocOtherUserName) && <Chip userName={concurrentDocOtherUserName} /> }
+              </div>
             )
           })}
         </Container>
