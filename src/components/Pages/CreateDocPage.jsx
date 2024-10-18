@@ -1,10 +1,15 @@
-import { useEffect, useRef, useState } from "react";
+import { off, onChildChanged, ref } from "firebase/database";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
+import { db } from "../../firebase";
 import useNoLogInRedirect from "../../hooks/useNoLogInRedirect";
+import { useBoundStore } from "../../store";
+import checkDeepEquality from "../../utils/checkDeepEquality";
 import getMap from "../../utils/getMap";
 import SaveButton from "../Button/SaveButton";
 import Container from "../UI/Container";
 import Layout from "../UI/Layout";
+import Chip from "../Chip";
 
 export default function CreateDocPage() {
   const initialKey = uuidv4();
@@ -13,10 +18,18 @@ export default function CreateDocPage() {
     return [{ key: initialKey, index: 0, value: "", height: 39 }];
   });
   const [currentFocusLine, setCurrentFocusLine] = useState({ key: initialKey, index: 0 });
+  const { uniqueDocId, isChangingDoc, userId, asyncGetUserNameWithUserId, concurrentDocOtherUserName } = useBoundStore(state => ({ 
+    uniqueDocId: state.uniqueDocId,
+    isChangingDoc: state.isChangingDoc,
+    userId: state.userId,
+    asyncGetUserNameWithUserId: state.asyncGetUserNameWithUserId,
+    concurrentDocOtherUserName: state.concurrentDocOtherUserName,
+  }));
 
   const lineCollectionRef = useRef(null);
   const isBackspaceTriggerRef = useRef(false);
   const lineStringLengthRef = useRef(0);
+  const otherUserFocusingLineKey = useRef(null);
   
   const handleInputChange = (e) => {
     setTitle(e.target.value);
@@ -117,6 +130,66 @@ export default function CreateDocPage() {
     setCurrentFocusLine((prev) => ({ ...prev, key: currentKey, index: currentIndex }));
   }
 
+  const handleValueChanged = useCallback(async (snapshot) => {
+    if (snapshot.exists() && isChangingDoc === false && uniqueDocId) {
+      const parsedResponse = snapshot.val();
+
+      if (snapshot.key === "concurrentWorkingUser") {
+        const otherUserId = Object.keys(parsedResponse)?.filter(value => value !== userId)[0];
+        const otherUserLine = parsedResponse[otherUserId];
+
+        await asyncGetUserNameWithUserId(otherUserId);
+
+        otherUserFocusingLineKey.current = otherUserLine;
+      } else if (snapshot.key === "contents") {
+        const changedFocusingLine = parsedResponse.filter(value => value.id === currentFocusLine.key).length === 0 ? null : parsedResponse.filter(value => value.id === currentFocusLine.key);
+        const changedFocusingLineIndex = changedFocusingLine && changedFocusingLine[0].index;
+
+        const isLineCollectionChanged = checkDeepEquality(parsedResponse, lineCollection);
+
+        if (isLineCollectionChanged === false) {
+          setLineCollection((prev) => {
+            let newLineCollection = [];
+  
+            for (let i = 0; i < parsedResponse.length; i++) {
+              const prevLineObject = prev[i];
+              const newLineObject = parsedResponse[i];
+  
+              if (prevLineObject) {
+                newLineCollection.push({ ...prevLineObject, ...newLineObject });
+              } else {
+                newLineCollection.push(newLineObject);
+              }
+            }
+  
+            return newLineCollection;
+          });
+        }
+
+        if (changedFocusingLine) {
+          setCurrentFocusLine((prev) => ({ ...prev, index: changedFocusingLineIndex }));
+        } else {
+          setCurrentFocusLine((prev) => ({ ...prev, key: parsedResponse[parsedResponse.length - 1].key, index: parsedResponse[parsedResponse.length - 1].index }));
+        }
+
+        const currentWorkingWordsLength = lineCollection.filter(value => value.key === currentFocusLine.key)[0].value.length;
+        lineStringLengthRef.current = currentWorkingWordsLength;  
+      } else {
+        return;
+      }
+    }
+  }, [asyncGetUserNameWithUserId, currentFocusLine.key, isChangingDoc, lineCollection, userId, uniqueDocId]);
+
+  useEffect(() => {
+    const dbRef = ref(db, `docs/${uniqueDocId}`);
+
+    onChildChanged(dbRef, handleValueChanged);
+
+    return () => {
+      off(dbRef, "child_changed", handleValueChanged);
+    }
+  }, [uniqueDocId, handleValueChanged]);
+
   useNoLogInRedirect();
 
   useEffect(() => {
@@ -139,15 +212,18 @@ export default function CreateDocPage() {
             const calculatedRows = Math.floor(height / 39);
 
             return (
-              <textarea key={key} ref={(node) => {
-                const map = getMap(lineCollectionRef);
+              <div key={key} className="relative">
+                  <textarea ref={(node) => {
+                    const map = getMap(lineCollectionRef);
 
-                if (node) {
-                  map.set(key, node);
-                } else {
-                  map.delete(key);
-                }
-              }} value={value} onKeyDown={handleTextareaKeyDown} onChange={handleTextareaChange} onFocus={handleTextareaFocus} rows={calculatedRows} className={`w-full rounded-[10px] px-15 text-white text-26 caret-white resize-none overflow-y-hidden bg-black-dark ${key === currentFocusLine.key && "border-1 border-solid border-white"}`} />
+                    if (node) {
+                      map.set(key, node);
+                    } else {
+                      map.delete(key);
+                    }
+                  }} value={value} onKeyDown={handleTextareaKeyDown} onChange={handleTextareaChange} onFocus={handleTextareaFocus} rows={calculatedRows} className={`w-full rounded-[10px] px-15 text-white text-26 caret-white resize-none overflow-y-hidden bg-black-dark ${key === currentFocusLine.key && "border-1 border-solid border-white"}`} />
+                  {(key === otherUserFocusingLineKey.current && concurrentDocOtherUserName) && <Chip userName={concurrentDocOtherUserName} /> }
+                </div>
             )
           })}
         </Container>
