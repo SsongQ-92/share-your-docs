@@ -21,7 +21,7 @@ $ npm install
 $ npm run build
 $ npm run preview
 
-https://localhost:3000 접속
+https://localhost:4173/ 접속
 ```
 
 ### 2. 상세 내용
