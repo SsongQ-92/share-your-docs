@@ -7,13 +7,13 @@
 > 1. 개발 기간: 2024. 10. 14 ~ 2024. 10. 18 <br/>
 > 2. Notion hommage (Notion-like application)
 
-## 실행 방법
+## 1️⃣ 실행 방법
 
 #### 기본적으로 배포 링크에 들어가서 접속하셔서 서비스를 이용하시면 됩니다.
 
 #### 아래 내용은 IDE에 clone 시 실행 방법을 안내하였습니다.
 
-### Quick Start Guide
+### 1. Quick Start Guide
 
 ```jsx
 $ git clone https://github.com/SsongQ-92/share-your-docs.git
@@ -24,7 +24,7 @@ $ npm run preview
 https://localhost:3000 접속
 ```
 
-### 상세 내용
+### 2. 상세 내용
 
 터미널에 아래와 같이 명령어를 입력 후, `package.json`에 명시되어 있는 각 dependencies를 설치합니다.
 
@@ -34,7 +34,7 @@ npm install
 
 각 node packages가 설치되었다면, application을 실행할 준비가 되었습니다.
 
-#### 개발 서버
+#### 1) 개발 서버
 
 터미널에 아래와 같이 명령어를 입력 후, vite 개발 서버를 실행시킵니다.
 
@@ -52,7 +52,7 @@ VITE v4.5.5
 -> press h to show help
 ```
 
-#### 프로덕션 빌드
+#### 2) 프로덕션 빌드
 
 ```
 npm run build
@@ -70,7 +70,7 @@ npm run preview
 -> press h to show help
 ```
 
-#### 추가사항: firebase 관련
+#### 3) 추가사항: firebase 관련
 
 추가로, firebase 서비스(로그인 및 realtime database)를 이용하시기 위해서는 firebase 환경변수가 필요한데요. 
 
@@ -86,7 +86,7 @@ VITE_APP_ID="본인꺼 적기"
 VITE_DATABASE_URL="본인꺼 적기"
 ```
 
-## 폴더 구조
+## 2️⃣ 폴더 구조
 
 ```
 ├── public
@@ -116,7 +116,7 @@ VITE_DATABASE_URL="본인꺼 적기"
 └── index.html
 ```
 
-## URL path 구조
+## 3️⃣ URL path 구조
 
 ### 1. Landing Page (`/`)
 
@@ -141,7 +141,7 @@ VITE_DATABASE_URL="본인꺼 적기"
 
 ### 5. Not Found Page a.k.a. 404 Page (`/*`)
 
-## 기술 스택
+## 4️⃣ 기술 스택
 
 **Front End**
 
