@@ -31,7 +31,6 @@ export default function EditDocPage({ currentDocData }) {
   }));
 
   const lineCollectionRef = useRef(null);
-  const isBackspaceTriggerRef = useRef(false);
   const lineStringLengthRef = useRef(contents[contents.length - 1].value.length);
   const otherUserFocusingLineKey = useRef(null);
   
@@ -95,8 +94,6 @@ export default function EditDocPage({ currentDocData }) {
       }))
 
       setCurrentFocusLine((prev) => ({ ...prev, key: lineCollection[beforeLineIndex]["key"], index: beforeLineIndex }));
-
-      isBackspaceTriggerRef.current = true;
     }
   }
 
@@ -207,8 +204,6 @@ export default function EditDocPage({ currentDocData }) {
 
     node.focus();
     node.setSelectionRange(lineStringLengthRef.current, lineStringLengthRef.current);
-
-    isBackspaceTriggerRef.current = false;
   }, [currentFocusLine])
 
   return (

@@ -7,9 +7,9 @@ import { useBoundStore } from "../../store";
 import checkDeepEquality from "../../utils/checkDeepEquality";
 import getMap from "../../utils/getMap";
 import SaveButton from "../Button/SaveButton";
+import Chip from "../Chip";
 import Container from "../UI/Container";
 import Layout from "../UI/Layout";
-import Chip from "../Chip";
 
 export default function CreateDocPage() {
   const initialKey = uuidv4();
@@ -27,7 +27,6 @@ export default function CreateDocPage() {
   }));
 
   const lineCollectionRef = useRef(null);
-  const isBackspaceTriggerRef = useRef(false);
   const lineStringLengthRef = useRef(0);
   const otherUserFocusingLineKey = useRef(null);
   
@@ -88,8 +87,6 @@ export default function CreateDocPage() {
       }))
 
       setCurrentFocusLine((prev) => ({ ...prev, key: lineCollection[beforeLineIndex]["key"], index: beforeLineIndex }));
-
-      isBackspaceTriggerRef.current = true;
     }
   }
 
@@ -198,8 +195,6 @@ export default function CreateDocPage() {
 
     node.focus();
     node.setSelectionRange(lineStringLengthRef.current, lineStringLengthRef.current);
-    
-    isBackspaceTriggerRef.current = false;
   }, [currentFocusLine])
 
   return (
