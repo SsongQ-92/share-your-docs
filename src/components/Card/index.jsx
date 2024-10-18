@@ -5,7 +5,7 @@ import changeDayFormat from "../../utils/changeDayFormat";
 
 export default function Card({ id, title, contents, createdAt, modifiedAt }) {
   const firstLine = contents[0].value;
-  const { currentYear: createdYear, currentMonth: createdMonth, currentDate: createdDate, currentDay: createdDay, currentHour: createdHour, currentMinute: createdMinute } = getDate(createdAt);
+  const createdDate = getDate(createdAt);
   const modifiedDate = getDate(modifiedAt);
 
   return (
@@ -28,7 +28,12 @@ export default function Card({ id, title, contents, createdAt, modifiedAt }) {
       </p>
       <p className="flex items-center gap-10">
         <span className="text-red-1 text-20">4️⃣ Created date: </span>
-        <span className="text-white text-18">{createdYear}년 {createdMonth}월 {createdDate}일 {changeDayFormat(createdDay)} {createdHour}시 {createdMinute}분</span>
+        <span className="text-white text-18">
+          {createdDate ? 
+            `${createdDate.currentYear}년 ${createdDate.currentMonth}월 ${createdDate.currentDate}일 ${changeDayFormat(createdDate.currentDay)} ${createdDate.currentHour}시 ${createdDate.currentMinute}분` :
+            "해당 문서를 최초로 작성하지 않았습니다"
+          }
+        </span>
       </p>
       <p className="flex items-center gap-10">
         <span className="text-red-1 text-20">5️⃣ Modified date: </span>
