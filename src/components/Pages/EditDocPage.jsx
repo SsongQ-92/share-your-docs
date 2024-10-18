@@ -143,47 +143,50 @@ export default function EditDocPage({ currentDocData }) {
     if (snapshot.exists() && isChangingDoc === false) {
       const parsedResponse = snapshot.val();
 
-      const newContents = parsedResponse.contents;
-      const newModifiedAt = parsedResponse.modifiedAt;
-      const newConcurrentWorkingUser = parsedResponse.concurrentWorkingUser;
+      if (snapshot.key === "concurrentWorkingUser") {
+        const otherUserId = Object.keys(parsedResponse)?.filter(value => value !== userId)[0];
+        const otherUserLine = parsedResponse[otherUserId];
 
-      const otherUserId = Object.keys(newConcurrentWorkingUser).filter(value => value !== userId)[0];
-      const otherUserLine = newConcurrentWorkingUser[otherUserId];
+        await asyncGetUserNameWithUserId(otherUserId);
 
-      const currentWorkingWordsLength = lineCollection.filter(value => value.key === currentFocusLine.key)[0].value.length;
-      const changedFocusingLine = newContents.filter(value => value.id === currentFocusLine.key).length === 0 ? null : newContents.filter(value => value.id === currentFocusLine.key);
-      const changedFocusingLineIndex = changedFocusingLine && changedFocusingLine[0].index;
+        otherUserFocusingLineKey.current = otherUserLine;
+      } else if (snapshot.key === "contents") {
+        const changedFocusingLine = parsedResponse.filter(value => value.id === currentFocusLine.key).length === 0 ? null : parsedResponse.filter(value => value.id === currentFocusLine.key);
+        const changedFocusingLineIndex = changedFocusingLine && changedFocusingLine[0].index;
 
-      await asyncGetUserNameWithUserId(otherUserId);
+        const isLineCollectionChanged = checkDeepEquality(parsedResponse, lineCollection);
 
-      setThisModifiedAt(newModifiedAt);
-      otherUserFocusingLineKey.current = otherUserLine;
-      lineStringLengthRef.current = currentWorkingWordsLength;
-      const isLineCollectionChanged = checkDeepEquality(newContents, lineCollection);
-
-      if (isLineCollectionChanged === false) {
-        setLineCollection((prev) => {
-          let newLineCollection = [];
-
-          for (let i = 0; i < newContents.length; i++) {
-            const prevLineObject = prev[i];
-            const newLineObject = newContents[i];
-
-            if (prevLineObject) {
-              newLineCollection.push({ ...prevLineObject, ...newLineObject });
-            } else {
-              newLineCollection.push(newLineObject);
+        if (isLineCollectionChanged === false) {
+          setLineCollection((prev) => {
+            let newLineCollection = [];
+  
+            for (let i = 0; i < parsedResponse.length; i++) {
+              const prevLineObject = prev[i];
+              const newLineObject = parsedResponse[i];
+  
+              if (prevLineObject) {
+                newLineCollection.push({ ...prevLineObject, ...newLineObject });
+              } else {
+                newLineCollection.push(newLineObject);
+              }
             }
-          }
+  
+            return newLineCollection;
+          });
+        }
 
-          return newLineCollection;
-        });
-      }
+        if (changedFocusingLine) {
+          setCurrentFocusLine((prev) => ({ ...prev, index: changedFocusingLineIndex }));
+        } else {
+          setCurrentFocusLine((prev) => ({ ...prev, key: parsedResponse[parsedResponse.length - 1].key, index: parsedResponse[parsedResponse.length - 1].index }));
+        }
 
-      if (changedFocusingLine) {
-        setCurrentFocusLine((prev) => ({ ...prev, index: changedFocusingLineIndex }));
+        const currentWorkingWordsLength = lineCollection.filter(value => value.key === currentFocusLine.key)[0].value.length;
+        lineStringLengthRef.current = currentWorkingWordsLength;  
+      } else if (snapshot.key === "modifiedAt") {
+        setThisModifiedAt(parsedResponse);
       } else {
-        setCurrentFocusLine((prev) => ({ ...prev, key: newContents[newContents.length - 1].key, index: newContents[newContents.length - 1].index }));
+        return;
       }
     }
   }, [asyncGetUserNameWithUserId, currentFocusLine.key, isChangingDoc, lineCollection, userId]);
