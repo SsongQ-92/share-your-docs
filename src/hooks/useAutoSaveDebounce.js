@@ -11,6 +11,7 @@ const useAutoSaveDebounce = (id, title, lineCollection, currentFocusLineKey, del
     const parsedDate = Date.parse(date);
 
     const docData = {
+      id,
       title,
       contents: lineCollection,
       modifiedAt: parsedDate,
