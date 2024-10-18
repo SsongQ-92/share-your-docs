@@ -20,7 +20,9 @@ export const createDocSlice = (set, getState) => ({
       const parsedResponse = response.val();
 
       if (parsedResponse === null) {
-        set((state) => ({ ...state, isNoExistDocUrlError: true }))
+        set((state) => ({ ...state, isNoExistDocUrlError: true }));
+      } else {
+        getState().addUserDocsNumber();
       }
     } catch ({ name, message }) {
       set((state) => ({ ...state, errorMessage: message , errorName: name }));
