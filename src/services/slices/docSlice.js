@@ -32,7 +32,7 @@ export const createDocSlice = (set, getState) => ({
       const response = await get(child(dbRef, `/${param}`));
       const parsedResponse = response.val();
 
-      set((state) => ({ ...state, currentDocData: parsedResponse }));
+      set((state) => ({ ...state, currentDocData: parsedResponse, uniqueDocId: param }));
     } catch ({ name, message }) {
       set((state) => ({ ...state, errorMessage: message , errorName: name }));
     }
@@ -147,11 +147,11 @@ export const createDocSlice = (set, getState) => ({
       const parsedResponse = response.val();
 
       const userId = getState().userId;
-      const updatedConcurrentWorkingUser = parsedResponse.filter(value => value !== userId);
-      const updatedDocDate = { concurrentWorkingUser: updatedConcurrentWorkingUser };
+      delete parsedResponse[userId];
+
+      const updatedDocDate = { concurrentWorkingUser: parsedResponse };
 
       await getState().asyncSaveDocOnDoc(uniqueId, updatedDocDate);
-      await getState().asyncSaveDocOnUser(uniqueId, updatedDocDate);
     } catch ({ name, message }) {
       set((state) => ({ ...state, errorMessage: message , errorName: name }));
     }
