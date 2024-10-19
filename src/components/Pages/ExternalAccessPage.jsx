@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { useBoundStore } from "../../store";
-import EditDocPage from "./EditDocPage";
+import DocPage from "./DocPage";
 import LandingPage from "./LandingPage";
 import NotFoundPage from "./NotFoundPage";
 
@@ -32,7 +32,7 @@ export default function ExternalAccessPage() {
   }
 
   if (isFetchCurrentUrlDocData) {
-    return <EditDocPage currentDocData={currentDocData} />
+    return <DocPage currentDocData={currentDocData} mode="edit" />
   }
 
   return <LandingPage />

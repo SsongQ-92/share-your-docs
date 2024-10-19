@@ -6,7 +6,6 @@ import { useBoundStore } from "../../store";
 import AutoSaveNoti from "../Noti/AutoSaveNoti";
 import ErrorMessageNoti from "../Noti/ErrorMessageNoti";
 import SaveButtonClickNoti from "../Noti/SaveButtonClickNoti";
-import useAutoSaveDebounce from "../../hooks/useAutoSaveDebounce";
 
 export default function SaveButton({ title, lineCollection, currentFocusLineKey }) {
   const [isTitleError, setIsTitleError] = useState(false);
@@ -60,8 +59,6 @@ export default function SaveButton({ title, lineCollection, currentFocusLineKey 
       asyncUpdateDocConcurrent(uniqueDocId, docData, false, currentFocusLineKey);
     }
   }
-
-  useAutoSaveDebounce(uniqueDocId, title, lineCollection, currentFocusLineKey, 900);
 
   useEffect(() => {
     const autoSave = () => {

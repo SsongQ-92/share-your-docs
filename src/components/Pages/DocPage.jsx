@@ -1,29 +1,47 @@
 import { off, onChildChanged, ref } from "firebase/database";
 import PropTypes from "prop-types";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { NO_TITLE_VALUE_ERROR, TOO_MANY_USER_EDITING_DOC } from "../../constants/errorMessage";
 import { db } from "../../firebase";
 import useAutoSaveDebounce from "../../hooks/useAutoSaveDebounce";
+import useNoLogInRedirect from "../../hooks/useNoLogInRedirect";
 import { useBoundStore } from "../../store";
 import changeDayFormat from "../../utils/changeDayFormat";
 import checkDeepEquality from "../../utils/checkDeepEquality";
 import getDate from "../../utils/getDate";
 import getMap from "../../utils/getMap";
+import SaveButton from "../Button/SaveButton";
 import Chip from "../Chip";
 import AutoSaveNoti from "../Noti/AutoSaveNoti";
 import ErrorMessageNoti from "../Noti/ErrorMessageNoti";
 import Container from "../UI/Container";
 import Layout from "../UI/Layout";
 
-export default function EditDocPage({ currentDocData }) {
-  const { author, authorId, id, createdAt, modifiedAt, title: initialTitle, contents } = currentDocData;
-  const [title, setTitle] = useState(initialTitle);
-  const [lineCollection, setLineCollection] = useState(contents);
-  const [currentFocusLine, setCurrentFocusLine] = useState({ key: contents[contents.length - 1].key, index: contents[contents.length - 1].index });
+export default function DocPage({ currentDocData = null, mode }) {
+  const nullishDocData = { author: null, authorId: null, createdAt: null, modifiedAt: null, title: null, contents: null };
+  const { author, authorId, createdAt, modifiedAt, title: initialTitle, contents } = (currentDocData ?? nullishDocData);
+  
+  const initialKey = uuidv4();
+  const [title, setTitle] = useState(mode === "create" ? "" : initialTitle);
+  const [lineCollection, setLineCollection] = useState(() => {
+    if (mode === "create") {
+      return [{ key: initialKey, index: 0, value: "", height: 39 }];
+    } else {
+      return [ ...contents ];
+    }
+  });
+  const [currentFocusLine, setCurrentFocusLine] = useState(() => {
+    if (mode === "create") {
+      return { key: initialKey, index: 0 };
+    } else {
+      return { key: contents[contents.length - 1].key, index: contents[contents.length - 1].index };
+    }
+  });
   const [thisModifiedAt, setThisModifiedAt] = useState(modifiedAt);
-  const { errorMessage, isChangingDoc, userId, asyncGetUserNameWithUserId, concurrentDocOtherUserName } = useBoundStore(state => ({ 
+  const { errorMessage, uniqueDocId, isChangingDoc, userId, asyncGetUserNameWithUserId, concurrentDocOtherUserName } = useBoundStore(state => ({ 
     errorMessage: state.errorMessage,
+    uniqueDocId: state.uniqueDocId,
     isChangingDoc: state.isChangingDoc,
     userId: state.userId,
     asyncGetUserNameWithUserId: state.asyncGetUserNameWithUserId,
@@ -31,12 +49,12 @@ export default function EditDocPage({ currentDocData }) {
   }));
 
   const lineCollectionRef = useRef(null);
-  const lineStringLengthRef = useRef(contents[contents.length - 1].value.length);
+  const lineStringLengthRef = useRef(mode === "create" ? 0 : contents[contents.length - 1].value.length);
   const otherUserFocusingLineKey = useRef(null);
-  
-  const createdDate = getDate(createdAt);
-  const modifiedDate = getDate(thisModifiedAt);
 
+  const createdDate = useMemo(() => getDate(createdAt), [createdAt]) ;
+  const modifiedDate = useMemo(() => getDate(thisModifiedAt), [thisModifiedAt]);
+  
   const handleInputChange = (e) => {
     setTitle(e.target.value);
   }
@@ -134,10 +152,10 @@ export default function EditDocPage({ currentDocData }) {
     setCurrentFocusLine((prev) => ({ ...prev, key: currentKey, index: currentIndex }));
   }
 
-  useAutoSaveDebounce(id, title, lineCollection, currentFocusLine.key, 900);
+  useAutoSaveDebounce(uniqueDocId, title, lineCollection, currentFocusLine.key, 900);
 
   const handleValueChanged = useCallback(async (snapshot) => {
-    if (snapshot.exists() && isChangingDoc === false) {
+    if (snapshot.exists() && isChangingDoc === false && uniqueDocId) {
       const parsedResponse = snapshot.val();
 
       if (snapshot.key === "concurrentWorkingUser") {
@@ -186,17 +204,19 @@ export default function EditDocPage({ currentDocData }) {
         return;
       }
     }
-  }, [asyncGetUserNameWithUserId, currentFocusLine.key, isChangingDoc, lineCollection, userId]);
+  }, [asyncGetUserNameWithUserId, currentFocusLine.key, isChangingDoc, lineCollection, userId, uniqueDocId]);
 
   useEffect(() => {
-    const dbRef = ref(db, `docs/${id}`);
+    const dbRef = ref(db, `docs/${uniqueDocId}`);
 
     onChildChanged(dbRef, handleValueChanged);
 
     return () => {
       off(dbRef, "child_changed", handleValueChanged);
     }
-  }, [id, handleValueChanged]);
+  }, [uniqueDocId, handleValueChanged]);
+
+  useNoLogInRedirect();
 
   useEffect(() => {
     const map = getMap(lineCollectionRef);
@@ -208,17 +228,19 @@ export default function EditDocPage({ currentDocData }) {
 
   return (
     <Layout>
-      <main className="flex flex-col justify-start items-center gap-40 px-70 pb-50 pt-130 bg-black-dark">
-        <section className="flex justify-between items-end w-full">
-          <h1 className="text-violet-light text-30">최초 작성자: {author}</h1>
-          <Container style="flex justify-end items-center gap-20 text-16 text-gray-3">
-            <h2>최초 작성일: {createdDate.currentYear}년 {createdDate.currentMonth}월 {createdDate.currentDate}일 {changeDayFormat(createdDate.currentDay)} {createdDate.currentHour}시 {createdDate.currentMinute}분</h2>
-            <h2>최근 수정일: {modifiedDate.currentYear}년 {modifiedDate.currentMonth}월 {modifiedDate.currentDate}일 {changeDayFormat(modifiedDate.currentDay)} {modifiedDate.currentHour}시 {modifiedDate.currentMinute}분</h2>
-          </Container>
-        </section>
-        <Container style="flex justify-between items-start gap-20 w-full">
-          <Container style="w-[88%] flex flex-col gap-2">
-            <input type="text" placeholder="제목" value={title} onChange={handleInputChange} className="border-1 border-solid border-white rounded-[10px] px-15 py-5 text-black text-30 caret-black bg-gray-1 mb-15" disabled={!(authorId === userId)} />
+      <main className={`flex px-70 pb-50 pt-130 bg-black-dark ${mode === "create" ? "justify-between items-start gap-20" : "flex-col justify-start items-center gap-40"}`}>
+        {mode === "edit" &&
+          (<section className="flex justify-between items-end w-full">
+            <h1 className="text-violet-light text-30">최초 작성자: {author}</h1>
+            <Container style="flex justify-end items-center gap-20 text-16 text-gray-3">
+              <h2>최초 작성일: {createdDate.currentYear}년 {createdDate.currentMonth}월 {createdDate.currentDate}일 {changeDayFormat(createdDate.currentDay)} {createdDate.currentHour}시 {createdDate.currentMinute}분</h2>
+              <h2>최근 수정일: {modifiedDate.currentYear}년 {modifiedDate.currentMonth}월 {modifiedDate.currentDate}일 {changeDayFormat(modifiedDate.currentDay)} {modifiedDate.currentHour}시 {modifiedDate.currentMinute}분</h2>
+            </Container>
+          </section>)
+        }
+        <Container style={mode === "create" ? "w-[88%]" : "flex justify-between items-start gap-20 w-full"}>
+          <Container style={mode === "create" ? "flex flex-col gap-2" : "w-[88%] flex flex-col gap-2"}>
+            <input type="text" placeholder="제목" value={title} onChange={handleInputChange} className="border-1 border-solid border-white rounded-[10px] px-15 py-5 text-black text-30 caret-black bg-gray-1 mb-15" disabled={mode === "edit" && !(authorId === userId)} />
             {lineCollection.map(lineValue => {
               const { key, value, height } = lineValue;
               const calculatedRows = Math.floor(height / 39);
@@ -239,19 +261,25 @@ export default function EditDocPage({ currentDocData }) {
               )
             })}
           </Container>
-          <Container style="flex flex-col gap-18 w-200 flex-shrink-0">
-            <AutoSaveNoti />
-            {title === "" && <ErrorMessageNoti errorText={NO_TITLE_VALUE_ERROR} />}
-            {errorMessage === TOO_MANY_USER_EDITING_DOC &&
-              <ErrorMessageNoti errorText={TOO_MANY_USER_EDITING_DOC} />
-            }
-          </Container>
+          {mode === "edit" &&
+            (<Container style="flex flex-col gap-18 w-200 flex-shrink-0">
+              <AutoSaveNoti />
+              {title === "" && <ErrorMessageNoti errorText={NO_TITLE_VALUE_ERROR} />}
+              {errorMessage === TOO_MANY_USER_EDITING_DOC &&
+                <ErrorMessageNoti errorText={TOO_MANY_USER_EDITING_DOC} />
+              }
+            </Container>)
+          }
         </Container>
+        {mode === "create" && 
+          <SaveButton title={title} lineCollection={lineCollection} currentFocusLineKey={currentFocusLine.key} />
+        }
       </main>
     </Layout>
   )
 }
 
-EditDocPage.propTypes = {
-  currentDocData: PropTypes.object,
+DocPage.propTypes = {
+  currentDocData:  PropTypes.object,
+  mode: PropTypes.string,
 };

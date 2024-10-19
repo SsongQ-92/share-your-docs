@@ -1,5 +1,5 @@
 import { Route, Routes } from "react-router-dom";
-import CreateDocPage from "./Pages/CreateDocPage";
+import DocPage from "./Pages/DocPage";
 import DocsListPage from "./Pages/DocsListPage";
 import ExternalAccessPage from "./Pages/ExternalAccessPage";
 import LandingPage from "./Pages/LandingPage";
@@ -11,7 +11,7 @@ export default function App() {
       <Route path="/" exact element={<LandingPage />} />
       <Route path="docs">
         <Route path="lists" element={<DocsListPage />} />
-        <Route path="new" element={<CreateDocPage />} />
+        <Route path="new" element={<DocPage mode="create" />} />
         <Route path=":docId" element={<ExternalAccessPage />} />
       </Route>
       <Route path="*" element={<NotFoundPage />} />
